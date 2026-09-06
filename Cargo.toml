@@ -2,6 +2,11 @@
 name = "rot"
 version = "0.1.0"
 edition = "2024"
+description = "Finds comments that have gone stale relative to the code they describe, via tree-sitter."
+repository = "https://github.com/TheRustyPickle/Rot"
+license = "MIT"
+keywords = ["cli", "comments", "documentation", "linter", "tree-sitter"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 anyhow = "1.0.104"
@@ -10,8 +15,6 @@ clap = { version = "4.6.6", features = ["derive"] }
 console = "0.16.4"
 dialoguer = "0.12.0"
 ignore = "0.4.33"
-log = "0.4.34"
-pretty_env_logger = "0.5.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 similar = "3.2.0"

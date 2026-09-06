@@ -4,14 +4,8 @@ mod ui;
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Command};
-use log::LevelFilter;
 
 fn main() -> Result<()> {
-    pretty_env_logger::formatted_timed_builder()
-        .format_timestamp_millis()
-        .filter_module(env!("CARGO_BIN_NAME"), LevelFilter::Info)
-        .init();
-
     let cli = Cli::parse();
 
     match cli.command {
