@@ -1,8 +1,8 @@
 mod common;
 
 use common::Project;
-use rot::engine;
-use rot::model::{Candidate, ItemKind};
+use comment_rot::engine;
+use comment_rot::model::{Candidate, ItemKind};
 
 fn candidate_for(p: &Project, before: &str, after: &str) -> Candidate {
     p.write("src/lib.rs", before);

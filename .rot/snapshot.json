@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": 1788709779,
+  "generated_at": 1788711097,
   "entries": {
     "src/cli.rs|crate::Command::Check": {
       "kind": "Variant",
@@ -89,8 +89,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Scans the project, diffs against the stored baseline, and\n\n persists everything that doesn't need a manual verdict.\n\n Only real candidates are held back\n",
       "comment_hash": "03b485ac617dacfd7057c472f0010cd480ab6057ccbb5b773362f9a63e546bcc",
-      "body_text": "pub fn check(root: &Path) -> Result<CheckOutcome> {\n    if !Snapshot::exists(root) {\n        bail!(\"no .rot/snapshot.json found - run `rot init` first\");\n    }\n\n    let old = Snapshot::load(root)?;\n    let fresh = scan::scan_project(root)?;\n\n    let diff = old.diff(&fresh);\n\n    diff.new_baseline.save(root)?;\n\n    let fresh_map = fresh.iter().map(|i| (i.id.clone(), i)).collect();\n\n    let mut issues = KnownIssues::load(root)?;\n\n    let issues_cleared = issues.reconcile(&fresh_map);\n\n    issues.save(root)?;\n\n    Ok(CheckOutcome {\n        candidates: diff.candidates,\n        added: diff.added,\n        updated: diff.updated,\n        unchanged: diff.unchanged,\n        pruned: diff.pruned,\n        issues_cleared,\n    })\n}",
-      "body_hash": "96148c541dce37916e4c1c3364ca70e4eb88116a9e4788630c47ec8419ffbce5"
+      "body_text": "pub fn check(root: &Path) -> Result<CheckOutcome> {\n    if !Snapshot::exists(root) {\n        bail!(\"no .rot/snapshot.json found. Run `rot init` first\");\n    }\n\n    let old = Snapshot::load(root)?;\n    let fresh = scan::scan_project(root)?;\n\n    let diff = old.diff(&fresh);\n\n    diff.new_baseline.save(root)?;\n\n    let fresh_map = fresh.iter().map(|i| (i.id.clone(), i)).collect();\n\n    let mut issues = KnownIssues::load(root)?;\n\n    let issues_cleared = issues.reconcile(&fresh_map);\n\n    issues.save(root)?;\n\n    Ok(CheckOutcome {\n        candidates: diff.candidates,\n        added: diff.added,\n        updated: diff.updated,\n        unchanged: diff.unchanged,\n        pruned: diff.pruned,\n        issues_cleared,\n    })\n}",
+      "body_hash": "47166cd1606b1202485e628ddd61fab8d3010b31c372d86474577a282653400c"
     },
     "src/hashing.rs|crate::normalize_for_hash": {
       "kind": "Function",

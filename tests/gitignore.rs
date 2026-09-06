@@ -1,7 +1,7 @@
 mod common;
 
 use common::Project;
-use rot::engine;
+use comment_rot::engine;
 
 #[test]
 fn ignored_files_are_never_scanned_even_without_a_git_repo() {

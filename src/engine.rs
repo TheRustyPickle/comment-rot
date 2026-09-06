@@ -14,7 +14,7 @@ pub struct InitOutcome {
 
 pub fn init(root: &Path, force: bool) -> Result<InitOutcome> {
     if Snapshot::exists(root) && !force {
-        bail!(".rot/snapshot.json already exists - pass --force to re-baseline from scratch");
+        bail!(".rot/snapshot.json already exists. Pass --force to re-baseline from scratch");
     }
 
     let fresh = scan::scan_project(root)?;
@@ -48,7 +48,7 @@ pub struct CheckOutcome {
 /// Only real candidates are held back
 pub fn check(root: &Path) -> Result<CheckOutcome> {
     if !Snapshot::exists(root) {
-        bail!("no .rot/snapshot.json found - run `rot init` first");
+        bail!("no .rot/snapshot.json found. Run `rot init` first");
     }
 
     let old = Snapshot::load(root)?;

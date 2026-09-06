@@ -1,9 +1,9 @@
 use anyhow::Result;
 use console::style;
 use dialoguer::Confirm;
-use rot::engine;
-use rot::model::ConfirmInput;
-use rot::model::Verdict;
+use comment_rot::engine;
+use comment_rot::model::ConfirmInput;
+use comment_rot::model::Verdict;
 use similar::{ChangeTag, TextDiff};
 use std::path::Path;
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use rot::engine;
-use rot::model::ConfirmInput;
+use comment_rot::engine;
+use comment_rot::model::ConfirmInput;
 use std::path::Path;
 
 pub fn run_check(root: &Path) -> Result<()> {

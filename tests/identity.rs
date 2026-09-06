@@ -1,8 +1,8 @@
 mod common;
 
 use common::Project;
-use rot::engine;
-use rot::model::{ConfirmInput, Verdict};
+use comment_rot::engine;
+use comment_rot::model::{ConfirmInput, Verdict};
 
 #[test]
 fn same_path_in_two_files_does_not_collide() {

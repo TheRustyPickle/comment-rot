@@ -1,5 +1,5 @@
 [package]
-name = "rot"
+name = "comment-rot"
 version = "0.1.0"
 edition = "2024"
 description = "Finds comments that have gone stale relative to the code they describe, via tree-sitter."
@@ -7,6 +7,10 @@ repository = "https://github.com/TheRustyPickle/Rot"
 license = "MIT"
 keywords = ["cli", "comments", "documentation", "linter", "tree-sitter"]
 categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "rot"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.104"
