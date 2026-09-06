@@ -122,7 +122,7 @@ impl Snapshot {
         Snapshot {
             version: Self::CURRENT_VERSION,
             generated_at: now_unix(),
-            entries: Default::default(),
+            entries: BTreeMap::default(),
         }
     }
 }
@@ -188,7 +188,7 @@ impl KnownIssues {
     pub fn new() -> Self {
         KnownIssues {
             version: Self::CURRENT_VERSION,
-            issues: Default::default(),
+            issues: BTreeMap::default(),
         }
     }
 }
