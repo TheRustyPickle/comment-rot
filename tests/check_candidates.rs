@@ -1,8 +1,8 @@
 mod common;
 
-use common::Project;
 use comment_rot::engine;
 use comment_rot::model::{ConfirmInput, Verdict};
+use common::Project;
 
 #[test]
 fn body_change_with_unchanged_comment_is_flagged() {

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": 1788711097,
+  "generated_at": 1788711945,
   "entries": {
     "src/cli.rs|crate::Command::Check": {
       "kind": "Variant",
@@ -412,15 +412,15 @@
       "body_text": "p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // note\\n    let a = 100;\\n    // note\\n    let b = 2;\\n}\\n\",\n    );\n    let check = engine::check(p.path()).unwrap();\n    assert_eq!(check.candidates.len(), 1);\n    assert!(check.candidates[0].old_body_text.contains(\"let a = 1\"));\n}",
       "body_hash": "138dfff668fc47afd8f160d23af2c868afac1d6e56a6ae5070731ee6c498d4fb"
     },
-    "tests/identity.rs|crate::free_comment_end_to_end_confirm_roundtrip#free:5d6aa18907f1": {
+    "tests/identity.rs|crate::free_comment_end_to_end_confirm_roundtrip#free:1349dfa7e9e9": {
       "kind": "Free",
       "file": "tests/identity.rs",
-      "item_path": "crate::free_comment_end_to_end_confirm_roundtrip#free:5d6aa18907f1",
+      "item_path": "crate::free_comment_end_to_end_confirm_roundtrip#free:1349dfa7e9e9",
       "comment_kind": "Line",
-      "comment_text": "// Same round trip as the doc-comment tests, but for a plain `//`\n// comment - this is the case the two bugs above were masking.",
-      "comment_hash": "5d6aa18907f1e9940c94f28ccecd3b5e3284ef1531c3f2240215da57442df1bd",
-      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 10;\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 20;\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert_eq!(outcome.candidates.len(), 1);\n    let id = outcome.candidates[0].id.clone();\n\n    engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id,\n            verdict: Verdict::No,\n        }],\n    )\n    .unwrap();\n    assert_eq!(engine::status(p.path()).unwrap().len(), 1);\n}",
-      "body_hash": "1c28bc496c36ffd36462d222845b00d48ea2d1f208641dc5896fd0964d037979"
+      "comment_text": "// Same round trip as the doc-comment tests, but for a plain `//`\n// comment - this is the case the two bugs above were masking",
+      "comment_hash": "1349dfa7e9e9bf3972b312155014a735589edaff61a5899d3694ea5f2834128f",
+      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 10;\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 20;\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert_eq!(outcome.candidates.len(), 1);\n    let id = outcome.candidates[0].id.clone();\n\n    engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id,\n            verdict: Verdict::No,\n        }]\n    )\n    .unwrap();\n    assert_eq!(engine::status(p.path()).unwrap().len(), 1);\n}",
+      "body_hash": "78b5d0e04a8d79fae2d4102f182568dd401c73beb83bac1e64b819625ea010cd"
     },
     "tests/identity.rs|crate::free_comment_id_stays_stable_while_its_code_changes#free:7bc8c3abe8b4": {
       "kind": "Free",

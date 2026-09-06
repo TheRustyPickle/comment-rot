@@ -1,8 +1,8 @@
 mod common;
 
-use common::Project;
 use comment_rot::engine;
 use comment_rot::model::{Candidate, ConfirmInput, Verdict};
+use common::Project;
 
 fn one_candidate(p: &Project) -> Candidate {
     let outcome = engine::check(p.path()).unwrap();

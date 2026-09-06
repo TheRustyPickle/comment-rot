@@ -1,7 +1,7 @@
 mod common;
 
-use common::Project;
 use comment_rot::engine;
+use common::Project;
 
 #[test]
 fn init_creates_baseline_with_expected_entry_count() {
