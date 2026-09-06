@@ -21,6 +21,7 @@ impl Snapshot {
         root.join(".rot").join(SNAPSHOT_FILENAME)
     }
 
+    #[must_use]
     pub fn exists(root: &Path) -> bool {
         Self::path(root).exists()
     }
@@ -49,6 +50,7 @@ impl Snapshot {
     /// Compares a fresh scan against this baseline. An entry becomes a
     /// candidate only when its comment hash is unchanged but its body hash
     /// isn't.
+    #[must_use]
     pub fn diff(&self, fresh: &[ScopedItem]) -> DiffResult {
         let fresh_map: BTreeMap<&str, &ScopedItem> =
             fresh.iter().map(|i| (i.id.as_str(), i)).collect();

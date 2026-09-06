@@ -23,6 +23,7 @@ pub enum ItemKind {
 }
 
 impl ItemKind {
+    #[must_use]
     pub fn label(self) -> &'static str {
         match self {
             ItemKind::Function => "function",
@@ -68,10 +69,12 @@ pub struct ScopedItem {
 }
 
 impl ScopedItem {
+    #[must_use]
     pub fn comment_hash(&self) -> String {
         hash_str(&self.comment_text)
     }
 
+    #[must_use]
     pub fn body_hash(&self) -> String {
         hash_str(&self.body_text)
     }
@@ -114,6 +117,7 @@ pub struct Snapshot {
 impl Snapshot {
     pub const CURRENT_VERSION: u32 = 1;
 
+    #[must_use]
     pub fn new() -> Self {
         Snapshot {
             version: Self::CURRENT_VERSION,
@@ -180,6 +184,7 @@ pub struct KnownIssues {
 impl KnownIssues {
     pub const CURRENT_VERSION: u32 = 1;
 
+    #[must_use]
     pub fn new() -> Self {
         KnownIssues {
             version: Self::CURRENT_VERSION,
@@ -194,9 +199,9 @@ impl Default for KnownIssues {
     }
 }
 
+#[must_use]
 pub fn now_unix() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
+        .map_or(0, |d| d.as_secs())
 }

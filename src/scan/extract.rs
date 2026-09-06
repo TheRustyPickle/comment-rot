@@ -47,7 +47,7 @@ pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {
 /// module-relative path (e.g. two binaries each with their own crate
 /// root), and without this they'd collide in the snapshot map.
 fn enjoin(file: &str, item_path: &str) -> String {
-    format!("{}|{}", file, item_path)
+    format!("{file}|{item_path}")
 }
 
 fn direct_children(node: Node) -> Vec<Node> {
@@ -121,14 +121,12 @@ fn item_name(node: &Node, src: &str) -> String {
             .child_by_field_name("trait")
             .map(|n| src[n.byte_range()].to_string());
         return match (tr, ty) {
-            (Some(tr), Some(ty)) => format!("impl {} for {}", tr, ty),
-            (None, Some(ty)) => format!("impl {}", ty),
+            (Some(tr), Some(ty)) => format!("impl {tr} for {ty}"),
+            (None, Some(ty)) => format!("impl {ty}"),
             _ => "impl".to_string(),
         };
     }
-    node.child_by_field_name("name")
-        .map(|n| src[n.byte_range()].to_string())
-        .unwrap_or_else(|| "<anonymous>".to_string())
+    node.child_by_field_name("name").map_or_else(|| "<anonymous>".to_string(), |n| src[n.byte_range()].to_string())
 }
 
 fn line_of(node: &Node) -> usize {
@@ -225,14 +223,14 @@ fn free_item_path(
     dedup: &mut HashMap<String, usize>,
 ) -> String {
     let anchor = short_anchor(&normalize_for_hash(comment_text));
-    let base = format!("{}#{}:{}", enclosing_path, tag, anchor);
+    let base = format!("{enclosing_path}#{tag}:{anchor}");
     let slot = dedup.entry(base.clone()).or_insert(0);
     let n = *slot;
     *slot += 1;
     if n == 0 {
         base
     } else {
-        format!("{}:{}", base, n)
+        format!("{base}:{n}")
     }
 }
 
@@ -413,7 +411,7 @@ fn scan_container(
                 .join("\n");
 
             let name = item_name(next, src);
-            let path = format!("{}::{}", enclosing_path, name);
+            let path = format!("{enclosing_path}::{name}");
 
             let item = ScopedItem {
                 id: enjoin(file, &path),
@@ -476,7 +474,7 @@ fn scan_container(
         }
 
         let name = item_name(child, src);
-        let path = format!("{}::{}", enclosing_path, name);
+        let path = format!("{enclosing_path}::{name}");
         let sub_children = direct_children(body);
 
         scan_container(&sub_children, src, file, &path, sub_kind, dedup, out);

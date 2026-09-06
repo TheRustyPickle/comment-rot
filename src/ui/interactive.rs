@@ -103,10 +103,10 @@ pub fn run_status(root: &Path) -> Result<()> {
             ))
             .bold()
         );
-        println!("  id: {}", id);
+        println!("  id: {id}");
         println!("  reason: {}", issue.reason);
         if let Some(first_line) = issue.comment_text.lines().next() {
-            println!("  comment: {}", first_line);
+            println!("  comment: {first_line}");
         }
     }
 

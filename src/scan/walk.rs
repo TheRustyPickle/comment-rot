@@ -19,7 +19,7 @@ pub fn collect_rust_files(root: &Path) -> Result<Vec<String>> {
             continue;
         }
 
-        if !entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
+        if !entry.file_type().is_some_and(|t| t.is_file()) {
             continue;
         }
 
