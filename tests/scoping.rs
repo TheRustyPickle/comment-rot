@@ -133,6 +133,37 @@ fn trait_associated_type_scope() {
 }
 
 #[test]
+fn extern_block_scope() {
+    // Regression: `foreign_mod_item` (an `extern "C" { ... }` block) wasn't
+    // in the item allowlist, so a doc comment on the block itself fell
+    // through to free-comment scoping.
+    let p = Project::new();
+    let c = candidate_for(
+        &p,
+        "/// doc\nextern \"C\" {\n    fn foo();\n}\n",
+        "/// doc\nextern \"C\" {\n    fn foo(x: i32);\n}\n",
+    );
+    assert_eq!(c.kind, ItemKind::Extern);
+    assert_eq!(c.item_path, "crate::extern \"C\"");
+}
+
+#[test]
+fn extern_block_body_is_recursed_into() {
+    // Regression: `foreign_mod_item` wasn't in the recursion allowlist
+    // either, so `scan_container` never even descended into its body - a
+    // doc comment on an individual FFI signature was completely invisible,
+    // not merely misclassified.
+    let p = Project::new();
+    let c = candidate_for(
+        &p,
+        "extern \"C\" {\n    /// doc\n    fn foo(x: i32);\n}\n",
+        "extern \"C\" {\n    /// doc\n    fn foo(x: i64);\n}\n",
+    );
+    assert_eq!(c.kind, ItemKind::Function);
+    assert_eq!(c.item_path, "crate::extern \"C\"::foo");
+}
+
+#[test]
 fn trait_scope_reacts_to_a_new_member_signature() {
     let p = Project::new();
     let c = candidate_for(
