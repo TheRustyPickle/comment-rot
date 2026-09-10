@@ -102,6 +102,37 @@ fn doc_comment_attaches_through_an_intervening_attribute() {
 }
 
 #[test]
+fn macro_rules_scope() {
+    // Regression: `macro_rules!` definitions weren't in the item allowlist,
+    // so a doc comment on one fell through to free-comment scoping instead
+    // of attaching to the macro.
+    let p = Project::new();
+    let c = candidate_for(
+        &p,
+        "/// doc\nmacro_rules! double {\n    ($x:expr) => {\n        $x * 2\n    };\n}\n",
+        "/// doc\nmacro_rules! double {\n    ($x:expr) => {\n        $x * 3\n    };\n}\n",
+    );
+    assert_eq!(c.kind, ItemKind::Macro);
+    assert_eq!(c.item_path, "crate::double");
+}
+
+#[test]
+fn trait_associated_type_scope() {
+    // Regression: a trait's associated type declaration (`type Item;`)
+    // parses as its own `associated_type` node, distinct from `type_item`
+    // (a real type alias) - it wasn't in the item allowlist either, so its
+    // doc comment fell through to free-comment scoping too.
+    let p = Project::new();
+    let c = candidate_for(
+        &p,
+        "pub trait T {\n    /// doc\n    type Item;\n}\n",
+        "pub trait T {\n    /// doc\n    type Item: Clone;\n}\n",
+    );
+    assert_eq!(c.kind, ItemKind::TypeAlias);
+    assert_eq!(c.item_path, "crate::T::Item");
+}
+
+#[test]
 fn trait_scope_reacts_to_a_new_member_signature() {
     let p = Project::new();
     let c = candidate_for(
