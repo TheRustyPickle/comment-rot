@@ -143,7 +143,10 @@ fn item_name(node: &Node, src: &str) -> String {
             .map_or_else(|| "extern".to_string(), |n| src[n.byte_range()].to_string());
     }
 
-    node.child_by_field_name("name").map_or_else(|| "<anonymous>".to_string(), |n| src[n.byte_range()].to_string())
+    node.child_by_field_name("name").map_or_else(
+        || "<anonymous>".to_string(),
+        |n| src[n.byte_range()].to_string(),
+    )
 }
 
 fn line_of(node: &Node) -> usize {
@@ -151,7 +154,6 @@ fn line_of(node: &Node) -> usize {
 }
 
 /// Collects the byte ranges of every comment nested anywhere under `node`
-/// (not recursing into a comment's own internals).
 fn collect_comment_ranges(node: Node, out: &mut Vec<(usize, usize)>) {
     if is_comment(&node) {
         out.push((node.start_byte(), node.end_byte()));
@@ -164,7 +166,7 @@ fn collect_comment_ranges(node: Node, out: &mut Vec<(usize, usize)>) {
 }
 
 /// Reconstructs the source text of `[start, end)` with every comment inside
-/// `nodes` spliced out - this is how "body" text ignores nested comments
+/// This is how "body" text ignores nested comments
 /// entirely, so an inner comment edit never changes an outer hash.
 fn strip_comments_range(start: usize, end: usize, nodes: &[Node], src: &str) -> String {
     let mut ranges = Vec::new();
@@ -191,7 +193,7 @@ fn strip_comments_node(node: Node, src: &str) -> String {
 }
 
 /// First line of an item's (comment-stripped) text, up to `{`, `;`, or a
-/// newline - used to build a shallow signature for containers whose doc
+/// newline. Used to build a shallow signature for containers whose doc
 /// comment should track "what's in here" rather than "how it's implemented".
 fn shallow_signature(node: &Node, src: &str) -> String {
     let full = strip_comments_node(*node, src);
@@ -209,11 +211,6 @@ fn shallow_container_signature(children: &[Node], src: &str) -> String {
         .join("\n")
 }
 
-/// Body text to hash for an outer-doc-commented item. Modules, traits, and
-/// impl blocks are hashed shallowly (their member signature list) so an
-/// edit to one method's *implementation* doesn't invalidate a doc comment
-/// that only describes what the container holds; everything else (notably
-/// functions) is hashed against its full comment-stripped content.
 fn item_body_text(node: &Node, src: &str) -> String {
     match node.kind() {
         "mod_item" | "trait_item" | "impl_item" => match node.child_by_field_name("body") {
@@ -224,15 +221,6 @@ fn item_body_text(node: &Node, src: &str) -> String {
     }
 }
 
-/// Builds the `item_path` for a free/trailing comment scope. Identity is
-/// anchored on the *comment's own text*, not the code it describes - the
-/// whole point is to keep the id stable while the body drifts out of sync,
-/// so a candidate can actually surface. If the comment itself changes,
-/// that's a new id (old one pruned, new one added), which matches the
-/// "comment changed too = assumed intentional" rule used everywhere else.
-/// `dedup` disambiguates repeated identical comment text within the same
-/// enclosing scope (e.g. two `// TODO` comments in one function) without
-/// resorting to line numbers.
 fn free_item_path(
     enclosing_path: &str,
     tag: &str,
@@ -240,15 +228,14 @@ fn free_item_path(
     dedup: &mut HashMap<String, usize>,
 ) -> String {
     let anchor = short_anchor(&normalize_for_hash(comment_text));
+
     let base = format!("{enclosing_path}#{tag}:{anchor}");
     let slot = dedup.entry(base.clone()).or_insert(0);
+
     let n = *slot;
     *slot += 1;
-    if n == 0 {
-        base
-    } else {
-        format!("{base}:{n}")
-    }
+
+    if n == 0 { base } else { format!("{base}:{n}") }
 }
 
 /// A side comment (`stmt(); // like this`)
