@@ -40,7 +40,6 @@ or another tool.
 - Item paths are built from each file's own AST, not Rust's real module
   graph. Two files can't currently be resolved as the same logical module
   via `mod` declarations elsewhere.
-- Rust's `macro_rules` aren't tracked, yet.
 - Only supports Rust files
 
 ## Contributing

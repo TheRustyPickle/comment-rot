@@ -91,6 +91,8 @@ fn is_item_like(kind: &str) -> bool {
             | "mod_item"
             | "field_declaration"
             | "enum_variant"
+            | "macro_definition"
+            | "associated_type"
     )
 }
 
@@ -108,6 +110,8 @@ fn kind_of(node_kind: &str) -> ItemKind {
         "mod_item" => ItemKind::Module,
         "field_declaration" => ItemKind::Field,
         "enum_variant" => ItemKind::Variant,
+        "macro_definition" => ItemKind::Macro,
+        "associated_type" => ItemKind::TypeAlias,
         _ => ItemKind::Free,
     }
 }

@@ -19,6 +19,7 @@ pub enum ItemKind {
     Module,
     Field,
     Variant,
+    Macro,
     Free,
 }
 
@@ -38,6 +39,7 @@ impl ItemKind {
             ItemKind::Module => "module",
             ItemKind::Field => "field",
             ItemKind::Variant => "variant",
+            ItemKind::Macro => "macro",
             ItemKind::Free => "code",
         }
     }
