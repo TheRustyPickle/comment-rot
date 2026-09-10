@@ -93,6 +93,7 @@ fn is_item_like(kind: &str) -> bool {
             | "enum_variant"
             | "macro_definition"
             | "associated_type"
+            | "foreign_mod_item"
     )
 }
 
@@ -112,6 +113,7 @@ fn kind_of(node_kind: &str) -> ItemKind {
         "enum_variant" => ItemKind::Variant,
         "macro_definition" => ItemKind::Macro,
         "associated_type" => ItemKind::TypeAlias,
+        "foreign_mod_item" => ItemKind::Extern,
         _ => ItemKind::Free,
     }
 }
@@ -121,15 +123,26 @@ fn item_name(node: &Node, src: &str) -> String {
         let ty = node
             .child_by_field_name("type")
             .map(|n| src[n.byte_range()].to_string());
+
         let tr = node
             .child_by_field_name("trait")
             .map(|n| src[n.byte_range()].to_string());
+
         return match (tr, ty) {
             (Some(tr), Some(ty)) => format!("impl {tr} for {ty}"),
             (None, Some(ty)) => format!("impl {ty}"),
             _ => "impl".to_string(),
         };
     }
+
+    if node.kind() == "foreign_mod_item" {
+        let mut cursor = node.walk();
+        return node
+            .children(&mut cursor)
+            .find(|c| c.kind() == "extern_modifier")
+            .map_or_else(|| "extern".to_string(), |n| src[n.byte_range()].to_string());
+    }
+
     node.child_by_field_name("name").map_or_else(|| "<anonymous>".to_string(), |n| src[n.byte_range()].to_string())
 }
 
@@ -464,6 +477,7 @@ fn scan_container(
             "impl_item" => (ItemKind::Impl, "body"),
             "function_item" => (ItemKind::Function, "body"),
             "enum_variant" => (ItemKind::Variant, "body"),
+            "foreign_mod_item" => (ItemKind::Extern, "body"),
             _ => continue,
         };
 

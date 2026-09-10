@@ -20,6 +20,7 @@ pub enum ItemKind {
     Field,
     Variant,
     Macro,
+    Extern,
     Free,
 }
 
@@ -40,6 +41,7 @@ impl ItemKind {
             ItemKind::Field => "field",
             ItemKind::Variant => "variant",
             ItemKind::Macro => "macro",
+            ItemKind::Extern => "extern block",
             ItemKind::Free => "code",
         }
     }
