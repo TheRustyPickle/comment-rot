@@ -34,6 +34,15 @@ pub fn run_confirm(root: &Path) -> Result<()> {
     Ok(())
 }
 
+pub fn run_resolve(root: &Path, id: &str) -> Result<bool> {
+    let resolved = engine::resolve(root, id)?;
+
+    let payload = serde_json::json!({ "id": id, "resolved": resolved });
+    println!("{}", serde_json::to_string_pretty(&payload)?);
+
+    Ok(resolved)
+}
+
 pub fn run_status(root: &Path) -> Result<()> {
     let issues = engine::status(root)?;
 

@@ -113,14 +113,16 @@ pub fn run_status(root: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn run_resolve(root: &Path, id: &str) -> Result<()> {
-    if engine::resolve(root, id)? {
+pub fn run_resolve(root: &Path, id: &str) -> Result<bool> {
+    let resolved = engine::resolve(root, id)?;
+
+    if resolved {
         println!("{}", style(format!("resolved {id}")).green());
     } else {
         println!("{}", style(format!("no known issue with id {id}")).yellow());
     }
 
-    Ok(())
+    Ok(resolved)
 }
 
 fn print_diff(old: &str, new: &str) {

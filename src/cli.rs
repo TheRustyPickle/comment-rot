@@ -50,5 +50,8 @@ pub enum Command {
         #[arg(long, short, default_value = ".")]
         path: PathBuf,
         id: String,
+        /// Print the result as JSON instead of plain text
+        #[arg(long)]
+        json: bool,
     },
 }
