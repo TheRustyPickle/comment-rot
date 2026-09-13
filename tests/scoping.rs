@@ -164,6 +164,67 @@ fn extern_block_body_is_recursed_into() {
 }
 
 #[test]
+fn attribute_only_change_is_visible_to_the_field_it_decorates() {
+    // Regression: an attribute is a sibling of the item it decorates, not
+    // a child - `item_body_text` used to hash only the item's own node, so
+    // an attribute-only edit (e.g. clap's `short`) never touched the
+    // field's own body hash at all.
+    let p = Project::new();
+    let c = candidate_for(
+        &p,
+        "pub struct S {\n    /// doc\n    #[arg(long, short)]\n    pub force: bool,\n}\n",
+        "pub struct S {\n    /// doc\n    #[arg(long)]\n    pub force: bool,\n}\n",
+    );
+    assert_eq!(c.kind, ItemKind::Field);
+    assert_eq!(c.item_path, "crate::S::force");
+}
+
+#[test]
+fn attribute_only_change_surfaces_at_the_field_not_just_the_enclosing_variant() {
+    // The exact shape reported as a bug: a struct-like enum variant with
+    // its own outer doc, and a field inside it with its own doc, where
+    // only the field's attribute changes. Before the fix, only the
+    // variant-level candidate fired - `g`(jump) on it lands on the
+    // variant's own line, nowhere near the attribute that actually
+    // changed. Both should fire: the variant's full body still did
+    // change, but the field it happened in is a separate, independently
+    // reviewable candidate that points at the right place.
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        "pub enum Command {\n    /// Manually clear a known-issue entry by id\n    Resolve {\n        id: String,\n        /// Print the result as JSON instead of plain text\n        #[arg(long, short)]\n        json: bool,\n    },\n}\n",
+    );
+    engine::init(p.path(), false).unwrap();
+
+    p.write(
+        "src/lib.rs",
+        "pub enum Command {\n    /// Manually clear a known-issue entry by id\n    Resolve {\n        id: String,\n        /// Print the result as JSON instead of plain text\n        #[arg(long)]\n        json: bool,\n    },\n}\n",
+    );
+    let outcome = engine::check(p.path()).unwrap();
+    assert_eq!(
+        outcome.candidates.len(),
+        2,
+        "expected both the variant and the field to surface, got {:#?}",
+        outcome.candidates
+    );
+
+    let variant = outcome
+        .candidates
+        .iter()
+        .find(|c| c.item_path == "crate::Command::Resolve")
+        .expect("variant-level candidate");
+    assert_eq!(variant.kind, ItemKind::Variant);
+
+    let field = outcome
+        .candidates
+        .iter()
+        .find(|c| c.item_path == "crate::Command::Resolve::json")
+        .expect("field-level candidate");
+    assert_eq!(field.kind, ItemKind::Field);
+    assert_eq!(field.line, 5);
+}
+
+#[test]
 fn trait_scope_reacts_to_a_new_member_signature() {
     let p = Project::new();
     let c = candidate_for(
