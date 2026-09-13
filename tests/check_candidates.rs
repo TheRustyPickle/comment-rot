@@ -9,13 +9,23 @@ fn body_change_with_unchanged_comment_is_flagged() {
     let p = Project::new();
     p.write(
         "src/lib.rs",
-        "/// Adds two numbers.\npub fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n",
+        r#"
+/// Adds two numbers.
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+"#,
     );
     engine::init(p.path(), false).unwrap();
 
     p.write(
         "src/lib.rs",
-        "/// Adds two numbers.\npub fn add(a: i32, b: i32) -> i32 {\n    a + b + 1\n}\n",
+        r#"
+/// Adds two numbers.
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b + 1
+}
+"#,
     );
     let outcome = engine::check(p.path()).unwrap();
     assert_eq!(outcome.candidates.len(), 1);
@@ -33,13 +43,17 @@ fn simultaneous_change_is_silently_absorbed_into_baseline() {
 
     p.write(
         "src/lib.rs",
-        "/// new doc\npub fn f() {\n    let _ = 1;\n}\n",
+        r#"
+/// new doc
+pub fn f() {
+    let _ = 1;
+}
+"#,
     );
     let outcome = engine::check(p.path()).unwrap();
     assert!(outcome.candidates.is_empty());
     assert_eq!(outcome.updated, 1);
 
-    // Baseline now reflects the new pairing - checking again finds nothing.
     let outcome2 = engine::check(p.path()).unwrap();
     assert!(outcome2.candidates.is_empty());
     assert_eq!(outcome2.unchanged, 1);
@@ -74,10 +88,26 @@ fn renamed_item_is_pruned_and_readded_without_a_prompt() {
 #[test]
 fn confirming_yes_updates_baseline_so_it_stops_resurfacing() {
     let p = Project::new();
-    p.write("src/lib.rs", "/// doc\npub fn f() -> i32 {\n    1\n}\n");
+    p.write(
+        "src/lib.rs",
+        r#"
+/// doc
+pub fn f() -> i32 {
+    1
+}
+"#,
+    );
     engine::init(p.path(), false).unwrap();
 
-    p.write("src/lib.rs", "/// doc\npub fn f() -> i32 {\n    2\n}\n");
+    p.write(
+        "src/lib.rs",
+        r#"
+/// doc
+pub fn f() -> i32 {
+    2
+}
+"#,
+    );
     let outcome = engine::check(p.path()).unwrap();
     assert_eq!(outcome.candidates.len(), 1);
     let id = outcome.candidates[0].id.clone();
@@ -100,17 +130,27 @@ fn confirming_yes_updates_baseline_so_it_stops_resurfacing() {
 
 #[test]
 fn apply_verdicts_only_rescans_files_the_verdicts_touch() {
-    // Regression: apply_verdicts used to re-scan the *entire* project just
-    // to confirm a handful of candidates. Proof it no longer does: an
-    // unrelated file with invalid UTF-8 (which a full-project scan can't
-    // even read) sits alongside the file actually being confirmed - if
-    // apply_verdicts touched it, this would error out before ever reaching
-    // the verdict loop.
     let p = Project::new();
-    p.write("src/lib.rs", "/// doc\npub fn f() -> i32 {\n    1\n}\n");
+    p.write(
+        "src/lib.rs",
+        r#"
+/// doc
+pub fn f() -> i32 {
+    1
+}
+"#,
+    );
     engine::init(p.path(), false).unwrap();
 
-    p.write("src/lib.rs", "/// doc\npub fn f() -> i32 {\n    2\n}\n");
+    p.write(
+        "src/lib.rs",
+        r#"
+/// doc
+pub fn f() -> i32 {
+    2
+}
+"#,
+    );
     let outcome = engine::check(p.path()).unwrap();
     assert_eq!(outcome.candidates.len(), 1);
     let id = outcome.candidates[0].id.clone();
