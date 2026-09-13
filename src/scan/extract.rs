@@ -58,6 +58,104 @@ fn is_comment(node: &Node) -> bool {
     matches!(node.kind(), "line_comment" | "block_comment")
 }
 
+/// Walks `node`'s subtree looking for every block-introducing construct
+/// `while`/`if`/`for`/`loop`/`match`, closures, and `unsafe`/`async`/bare
+/// blocks
+fn find_nested_blocks<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    if is_target_kind(node.kind()) {
+        return;
+    }
+
+    match node.kind() {
+        "while_expression" | "for_expression" | "loop_expression" => {
+            if let Some(body) = node.child_by_field_name("body") {
+                out.push(body);
+            }
+
+            for field in ["condition", "value", "pattern"] {
+                if let Some(n) = node.child_by_field_name(field) {
+                    find_nested_blocks(n, out);
+                }
+            }
+        }
+
+        "if_expression" => {
+            if let Some(consequence) = node.child_by_field_name("consequence") {
+                out.push(consequence);
+            }
+
+            if let Some(condition) = node.child_by_field_name("condition") {
+                find_nested_blocks(condition, out);
+            }
+
+            if let Some(alt) = node.child_by_field_name("alternative") {
+                let mut cursor = alt.walk();
+                for child in alt.named_children(&mut cursor) {
+                    if child.kind() == "block" {
+                        out.push(child);
+                    } else {
+                        find_nested_blocks(child, out); // a chained `else if`
+                    }
+                }
+            }
+        }
+
+        "match_expression" => {
+            if let Some(value) = node.child_by_field_name("value") {
+                find_nested_blocks(value, out);
+            }
+
+            if let Some(body) = node.child_by_field_name("body") {
+                let mut cursor = body.walk();
+
+                for arm in body.named_children(&mut cursor) {
+                    if arm.kind() != "match_arm" {
+                        continue;
+                    }
+
+                    if let Some(value) = arm.child_by_field_name("value") {
+                        if value.kind() == "block" {
+                            out.push(value);
+                        } else {
+                            find_nested_blocks(value, out);
+                        }
+                    }
+                }
+            }
+        }
+
+        "closure_expression" => {
+            if let Some(body) = node.child_by_field_name("body") {
+                if body.kind() == "block" {
+                    out.push(body);
+                } else {
+                    find_nested_blocks(body, out); // unbraced closure body
+                }
+            }
+        }
+
+        "unsafe_block" | "async_block" => {
+            let mut cursor = node.walk();
+
+            if let Some(block) = node
+                .named_children(&mut cursor)
+                .find(|c| c.kind() == "block")
+            {
+                out.push(block);
+            }
+        }
+
+        "block" => out.push(node),
+        _ => {
+            let mut cursor = node.walk();
+
+            for child in node.named_children(&mut cursor) {
+                find_nested_blocks(child, out);
+            }
+        }
+    }
+}
+
 fn is_doc_comment(node: &Node) -> bool {
     node.child_by_field_name("outer").is_some() || node.child_by_field_name("inner").is_some()
 }
@@ -74,7 +172,7 @@ fn doc_text(node: &Node, src: &str) -> String {
     }
 }
 
-fn is_item_like(kind: &str) -> bool {
+fn is_target_kind(kind: &str) -> bool {
     matches!(
         kind,
         "function_item"
@@ -210,6 +308,51 @@ fn shallow_container_signature(children: &[Node], src: &str) -> String {
         .join("\n")
 }
 
+/// A single span node's text with the interior of every
+/// nested block found within it collapsed away
+fn collapse_nested_blocks(node: &Node, src: &str) -> String {
+    let mut cuts = Vec::new();
+    collect_comment_ranges(*node, &mut cuts);
+
+    let mut blocks = Vec::new();
+
+    find_nested_blocks(*node, &mut blocks);
+
+    for b in &blocks {
+        if b.end_byte() > b.start_byte() + 2 {
+            cuts.push((b.start_byte() + 1, b.end_byte() - 1));
+        }
+    }
+
+    cuts.sort_by_key(|r| r.0);
+
+    let mut result = String::new();
+    let mut pos = node.start_byte();
+
+    for (s, e) in cuts {
+        if s > pos {
+            result.push_str(&src[pos..s]);
+        }
+        pos = pos.max(e);
+    }
+
+    if pos < node.end_byte() {
+        result.push_str(&src[pos..node.end_byte()]);
+    }
+
+    result
+}
+
+/// A free comment's forward-scoped body: each statement's own text with
+/// any nested block collapsed away (see `collapse_nested_blocks`).
+fn free_span_text(span: &[Node], src: &str) -> String {
+    span.iter()
+        .map(|n| collapse_nested_blocks(n, src))
+        .filter(|s| !s.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn item_body_text(attrs: &[Node], node: &Node, src: &str) -> String {
     let attrs_text = attrs
         .iter()
@@ -313,16 +456,18 @@ fn handle_free_group(
 
     let n = children.len();
     let mut span_end = after_idx;
+
     while span_end < n && !is_comment(&children[span_end]) {
         span_end += 1;
     }
+
     if span_end == after_idx {
         return; // nothing follows before the next comment / end of container
     }
+
     let span = &children[after_idx..span_end];
-    let start = span[0].start_byte();
-    let end = span[span.len() - 1].end_byte();
-    let body = strip_comments_range(start, end, span, src);
+    let body = free_span_text(span, src);
+
     if body.trim().is_empty() {
         return;
     }
@@ -334,7 +479,8 @@ fn handle_free_group(
     } else {
         CommentKind::Line
     };
-    out.push(ScopedItem {
+
+    let item = ScopedItem {
         id: enjoin(file, &item_path),
         kind: ItemKind::Free,
         file: file.to_string(),
@@ -343,7 +489,9 @@ fn handle_free_group(
         comment_text: text,
         body_text: body,
         line: line_of(&group[0]),
-    });
+    };
+
+    out.push(item);
 }
 
 fn scan_container(
@@ -413,6 +561,7 @@ fn scan_container(
         // the item they annotate, not part of it. A doc comment can have
         // one or more of these sitting between it
         let mut item_idx = i;
+
         while item_idx < n && children[item_idx].kind() == "attribute_item" {
             item_idx += 1;
         }
@@ -420,7 +569,7 @@ fn scan_container(
         if is_doc_comment(last)
             && !is_inner_doc(last)
             && let Some(next) = children.get(item_idx)
-            && is_item_like(next.kind())
+            && is_target_kind(next.kind())
         {
             let text = group
                 .iter()
@@ -468,7 +617,7 @@ fn scan_container(
         }
     }
 
-    // Recurse into nested containers regardless of whether they had a doc comment.
+    // Recurse into nested containers
     for child in children {
         let (sub_kind, body_field) = match child.kind() {
             "mod_item" => (ItemKind::Module, "body"),
@@ -480,7 +629,28 @@ fn scan_container(
             "function_item" => (ItemKind::Function, "body"),
             "enum_variant" => (ItemKind::Variant, "body"),
             "foreign_mod_item" => (ItemKind::Extern, "body"),
-            _ => continue,
+            _ => {
+                // Not a named item. Look anywhere in this statement for a
+                // nested block and recurse into each one
+                let mut blocks = Vec::new();
+
+                find_nested_blocks(*child, &mut blocks);
+
+                for block in blocks {
+                    let sub_children = direct_children(block);
+                    scan_container(
+                        &sub_children,
+                        src,
+                        file,
+                        enclosing_path,
+                        enclosing_kind,
+                        dedup,
+                        out,
+                    );
+                }
+
+                continue;
+            }
         };
 
         let Some(body) = child.child_by_field_name(body_field) else {
