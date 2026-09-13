@@ -1,8 +1,9 @@
-use crate::hashing::{normalize_for_hash, short_anchor};
-use crate::model::{CommentKind, ItemKind, ScopedItem};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use tree_sitter::{Node, Parser};
+
+use crate::hashing::{normalize_for_hash, short_anchor};
+use crate::model::{CommentKind, ItemKind, ScopedItem};
 
 /// Parses one Rust source file and extracts every doc-comment
 /// and regular-comment
@@ -43,9 +44,7 @@ pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {
 }
 
 /// Every entry's `id` is qualified by file, on top of its human-readable
-/// `item_path` - two files can otherwise legitimately have the same
-/// module-relative path (e.g. two binaries each with their own crate
-/// root), and without this they'd collide in the snapshot map.
+/// `item_path`
 fn enjoin(file: &str, item_path: &str) -> String {
     format!("{file}|{item_path}")
 }
@@ -211,13 +210,25 @@ fn shallow_container_signature(children: &[Node], src: &str) -> String {
         .join("\n")
 }
 
-fn item_body_text(node: &Node, src: &str) -> String {
-    match node.kind() {
+fn item_body_text(attrs: &[Node], node: &Node, src: &str) -> String {
+    let attrs_text = attrs
+        .iter()
+        .map(|a| strip_comments_node(*a, src))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let own = match node.kind() {
         "mod_item" | "trait_item" | "impl_item" => match node.child_by_field_name("body") {
             Some(body) => shallow_container_signature(&direct_children(body), src),
             None => strip_comments_node(*node, src),
         },
         _ => strip_comments_node(*node, src),
+    };
+
+    if attrs_text.is_empty() {
+        own
+    } else {
+        format!("{attrs_text}\n{own}")
     }
 }
 
@@ -262,12 +273,14 @@ fn handle_trailing_group(
 
     let item_path = free_item_path(enclosing_path, "trailing", &text, dedup);
     let last = group.last().unwrap();
+
     let comment_kind = if last.kind() == "block_comment" {
         CommentKind::Block
     } else {
         CommentKind::Line
     };
-    out.push(ScopedItem {
+
+    let item = ScopedItem {
         id: enjoin(file, &item_path),
         kind: ItemKind::Free,
         file: file.to_string(),
@@ -276,7 +289,9 @@ fn handle_trailing_group(
         comment_text: text,
         body_text: body,
         line: line_of(&group[0]),
-    });
+    };
+
+    out.push(item);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -424,7 +439,7 @@ fn scan_container(
                 item_path: path,
                 comment_kind: CommentKind::OuterDoc,
                 comment_text: text,
-                body_text: item_body_text(next, src),
+                body_text: item_body_text(&children[i..item_idx], next, src),
                 line: line_of(&group[0]),
             };
 
