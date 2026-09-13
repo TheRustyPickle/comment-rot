@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": 1789063518,
+  "generated_at": 1789309246,
   "entries": {
     "src/cli.rs|crate::Command::Check": {
       "kind": "Variant",
@@ -19,8 +19,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Print candidates as a JSON array on stdout instead of prompting\n\n interactively\n",
       "comment_hash": "0fc87605003b477de491c9755d300363aaff6368f5354610ee6ac0b4ba43a9f4",
-      "body_text": "json: bool",
-      "body_hash": "60004d9377453acd4faec7d16ffe0ac3474b463210524ad1f22a681582d63871"
+      "body_text": "#[arg(long)]\njson: bool",
+      "body_hash": "920d768d1252a2b959032f6f65a422cd8c06752fb67a0dc34559b817b42367c2"
     },
     "src/cli.rs|crate::Command::Confirm": {
       "kind": "Variant",
@@ -49,8 +49,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Re-do the snapshot from scratch even if a snapshot already exists.\n",
       "comment_hash": "4919c7e11c466b7f46022aa59fcd04367722cf313b9665bff8a2e7bf774b1018",
-      "body_text": "force: bool",
-      "body_hash": "2a7ada742ae3cf6f2890022cd5a78ea06d4ec5a77d960634d36a90fb8844f5e6"
+      "body_text": "#[arg(long)]\nforce: bool",
+      "body_hash": "463a22b0603691d912982f917a32ce9c209fb7769aa88d99319441c927f24726"
     },
     "src/cli.rs|crate::Command::Resolve": {
       "kind": "Variant",
@@ -59,8 +59,18 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Manually clear a known-issue entry by id\n",
       "comment_hash": "59c3872f02a4c8b4eaffa900f3bf9535e3c0a0eac0e9aa52ae53591b86aba537",
-      "body_text": "Resolve {\n        #[arg(long, short, default_value = \".\")]\n        path: PathBuf,\n        id: String,\n    }",
-      "body_hash": "2e29b94ec8499e74b32aa245e1060fc9cdba556d96ecf992b733a83b9b89691f"
+      "body_text": "Resolve {\n        #[arg(long, short, default_value = \".\")]\n        path: PathBuf,\n        id: String,\n                #[arg(long)]\n        json: bool,\n    }",
+      "body_hash": "08dc37fbdfa54c3fdfbe93adf52776e850ac2e4e9b512583524779f7129cf038"
+    },
+    "src/cli.rs|crate::Command::Resolve::json": {
+      "kind": "Field",
+      "file": "src/cli.rs",
+      "item_path": "crate::Command::Resolve::json",
+      "comment_kind": "OuterDoc",
+      "comment_text": " Print the result as JSON instead of plain text\n",
+      "comment_hash": "8f2a4c09c787b921a553e427b25dd64ebd3cf33a8e27ccbe05f23a3ca7358fd8",
+      "body_text": "#[arg(long)]\njson: bool",
+      "body_hash": "920d768d1252a2b959032f6f65a422cd8c06752fb67a0dc34559b817b42367c2"
     },
     "src/cli.rs|crate::Command::Status": {
       "kind": "Variant",
@@ -81,6 +91,16 @@
       "comment_hash": "1899899848873ce301a9c70fb1ffc4447a88e6f23c84235c2c7b2784edf0ceb4",
       "body_text": "pub fn apply_verdicts(root: &Path, verdicts: &[ConfirmInput]) -> Result<ApplyOutcome> {\n    let mut snap = Snapshot::load(root)?;\n\n    let fresh = scan::scan_files_for_ids(root, verdicts.iter().map(|v| v.id.as_str()))?;\n    let fresh_map: BTreeMap<String, &ScopedItem> =\n        fresh.iter().map(|i| (i.id.clone(), i)).collect();\n\n    let mut issues = KnownIssues::load(root)?;\n\n    let mut updated = 0;\n    let mut flagged = 0;\n    let mut skipped_missing = 0;\n\n    for v in verdicts {\n        let Some(fresh_item) = fresh_map.get(&v.id) else {\n            skipped_missing += 1;\n            continue;\n        };\n\n        let old_entry = snap.entries.get(v.id.as_str()).cloned();\n\n        \n        snap.entries\n            .insert(v.id.clone(), SnapshotEntry::from(*fresh_item));\n\n        updated += 1;\n\n        match v.verdict {\n            Verdict::Yes => {\n                issues.clear(&v.id);\n            }\n            Verdict::No => {\n                let old_body = old_entry.map(|e| e.body_text).unwrap_or_default();\n\n                issues.flag(\n                    &v.id,\n                    fresh_item.kind,\n                    &fresh_item.file,\n                    &fresh_item.item_path,\n                    &fresh_item.comment_text,\n                    &old_body,\n                    &fresh_item.body_text,\n                    \"confirmed stale by reviewer\",\n                );\n\n                flagged += 1;\n            }\n        }\n    }\n\n    snap.save(root)?;\n    issues.save(root)?;\n\n    Ok(ApplyOutcome {\n        updated,\n        flagged,\n        skipped_missing,\n    })\n}",
       "body_hash": "15bbae3ad995677b77dfa4a44e3a2e19a452bf2c3dff483514dbe8aff818f032"
+    },
+    "src/engine.rs|crate::apply_verdicts#free:288b73cf1af6": {
+      "kind": "Free",
+      "file": "src/engine.rs",
+      "item_path": "crate::apply_verdicts#free:288b73cf1af6",
+      "comment_kind": "Line",
+      "comment_text": "// Update existing snap with the item from fresh scan",
+      "comment_hash": "288b73cf1af65f578344fbfd9005e2a3b43485366ce5f78c4aabbfd692d022e1",
+      "body_text": "snap.entries\n            .insert(v.id.clone(), SnapshotEntry::from(*fresh_item));\nupdated += 1;\nmatch v.verdict {\n            Verdict::Yes => {}\n            Verdict::No => {}\n        }\n}",
+      "body_hash": "10f3529bef688865ee01da233be6c815be805ec2f00dd254c81ed3081888c12c"
     },
     "src/engine.rs|crate::check": {
       "kind": "Function",
@@ -139,8 +159,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " A stale-comment candidate\n",
       "comment_hash": "b264be87b4a50686189b8498cee0394c25c9918d2aca2b93150f71d67c6215d3",
-      "body_text": "pub struct Candidate {\n    pub id: String,\n    pub kind: ItemKind,\n    pub file: String,\n    pub item_path: String,\n    pub line: usize,\n    pub comment_kind: CommentKind,\n    pub comment_text: String,\n    pub old_body_text: String,\n    pub new_body_text: String,\n    pub reason: String,\n}",
-      "body_hash": "e44c91d8ca73919e8d14cc3173c94e015a4946523aba1fda8a6697dc9b9d2c79"
+      "body_text": "#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Candidate {\n    pub id: String,\n    pub kind: ItemKind,\n    pub file: String,\n    pub item_path: String,\n    pub line: usize,\n    pub comment_kind: CommentKind,\n    pub comment_text: String,\n    pub old_body_text: String,\n    pub new_body_text: String,\n    pub reason: String,\n}",
+      "body_hash": "e8a5c2e1136210bd4f6a411ea185ba648632a000f76a2cbe2e747b49b43e7209"
     },
     "src/model.rs|crate::CommentKind": {
       "kind": "Enum",
@@ -149,8 +169,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Where a comment's text came from, syntactically.\n",
       "comment_hash": "11dfacbc4c44e95cd0c829af777679606cde10ac2a745f79cce98959a75aed32",
-      "body_text": "pub enum CommentKind {\n        OuterDoc,\n        InnerDoc,\n        Line,\n        Block,\n}",
-      "body_hash": "53c248a614fc5d90445ab6e50085c3935d54e85bf13249059b6b40bd822df18c"
+      "body_text": "#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]\npub enum CommentKind {\n        OuterDoc,\n        InnerDoc,\n        Line,\n        Block,\n}",
+      "body_hash": "5ad86950920bb7b93d2edd420eb4721b216b6e5befb9e60478284545d3245560"
     },
     "src/model.rs|crate::CommentKind::Block": {
       "kind": "Variant",
@@ -199,8 +219,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Kind of syntax construct a scope entry is attached to.\n",
       "comment_hash": "000deec12534b599ffc3b7d9c8b61934c0167f4995bde929a791f832acd3ec6a",
-      "body_text": "pub enum ItemKind {\n    Function,\n    Struct,\n    Enum,\n    Union,\n    Trait,\n    Impl,\n    Const,\n    Static,\n    TypeAlias,\n    Module,\n    Field,\n    Variant,\n    Macro,\n    Extern,\n    Free,\n}",
-      "body_hash": "476ec78ef66384940774296ae133580dec2cdeae7ce5d09f76970b83b96c084c"
+      "body_text": "#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]\npub enum ItemKind {\n    Function,\n    Struct,\n    Enum,\n    Union,\n    Trait,\n    Impl,\n    Const,\n    Static,\n    TypeAlias,\n    Module,\n    Field,\n    Variant,\n    Macro,\n    Extern,\n    Free,\n}",
+      "body_hash": "f726232406dccdf1649dcc6de935743b03dea100db37d88a1b49f9751e864df4"
     },
     "src/model.rs|crate::Verdict::No": {
       "kind": "Variant",
@@ -222,6 +242,16 @@
       "body_text": "Yes",
       "body_hash": "41ba0ff5611f0b937135ca96047a9199104642f38b70526ae121414b1a2b13dd"
     },
+    "src/scan/extract.rs|crate::collapse_nested_blocks": {
+      "kind": "Function",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::collapse_nested_blocks",
+      "comment_kind": "OuterDoc",
+      "comment_text": " A single span node's text with the interior of every\n\n nested block found within it collapsed away\n",
+      "comment_hash": "120822453313bf064a06daff734a5eafd683b407289be440a58db042129fc642",
+      "body_text": "fn collapse_nested_blocks(node: &Node, src: &str) -> String {\n    let mut cuts = Vec::new();\n    collect_comment_ranges(*node, &mut cuts);\n\n    let mut blocks = Vec::new();\n\n    find_nested_blocks(*node, &mut blocks);\n\n    for b in &blocks {\n        if b.end_byte() > b.start_byte() + 2 {\n            cuts.push((b.start_byte() + 1, b.end_byte() - 1));\n        }\n    }\n\n    cuts.sort_by_key(|r| r.0);\n\n    let mut result = String::new();\n    let mut pos = node.start_byte();\n\n    for (s, e) in cuts {\n        if s > pos {\n            result.push_str(&src[pos..s]);\n        }\n        pos = pos.max(e);\n    }\n\n    if pos < node.end_byte() {\n        result.push_str(&src[pos..node.end_byte()]);\n    }\n\n    result\n}",
+      "body_hash": "d42ca97d4d44f96a4097b0308280e59481bf59cb2ea8acddb415941a801a2022"
+    },
     "src/scan/extract.rs|crate::collect_comment_ranges": {
       "kind": "Function",
       "file": "src/scan/extract.rs",
@@ -237,8 +267,8 @@
       "file": "src/scan/extract.rs",
       "item_path": "crate::enjoin",
       "comment_kind": "OuterDoc",
-      "comment_text": " Every entry's `id` is qualified by file, on top of its human-readable\n\n `item_path` - two files can otherwise legitimately have the same\n\n module-relative path (e.g. two binaries each with their own crate\n\n root), and without this they'd collide in the snapshot map.\n",
-      "comment_hash": "8bfc1ed619a48747e168267460f11d295613a8cd823d8f1b1f96546d917a4381",
+      "comment_text": " Every entry's `id` is qualified by file, on top of its human-readable\n\n `item_path`\n",
+      "comment_hash": "16d258eaf15a9ca405ee12391e681d2e6293299b8f5f8f0f0eb7714516e40516",
       "body_text": "fn enjoin(file: &str, item_path: &str) -> String {\n    format!(\"{file}|{item_path}\")\n}",
       "body_hash": "ca08dfe932152a5a08bea201a9b816e3a47992f5baf342f2ea5befa3a7d92c3b"
     },
@@ -252,6 +282,56 @@
       "body_text": "pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {\n    let mut parser = Parser::new();\n\n    parser\n        .set_language(&tree_sitter_rust::LANGUAGE.into())\n        .context(\"loading rust grammar\")?;\n\n    let tree = parser\n        .parse(src, None)\n        .context(\"tree-sitter failed to produce a parse tree\")?;\n\n    let root = tree.root_node();\n    let mut out = Vec::new();\n    let mut dedup = HashMap::new();\n\n    let children = direct_children(root);\n\n    scan_container(\n        &children,\n        src,\n        file_rel,\n        \"crate\",\n        ItemKind::Module,\n        &mut dedup,\n        &mut out,\n    );\n    Ok(out)\n}",
       "body_hash": "18c93fa35a77a63ba9d7149f3e75859e50a20674f1845f377d249b71a7025a00"
     },
+    "src/scan/extract.rs|crate::find_nested_blocks": {
+      "kind": "Function",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::find_nested_blocks",
+      "comment_kind": "OuterDoc",
+      "comment_text": " Walks `node`'s subtree looking for every block-introducing construct\n\n `while`/`if`/`for`/`loop`/`match`, closures, and `unsafe`/`async`/bare\n\n blocks\n",
+      "comment_hash": "6cf0f10db473fc3b5d0159b4403271b84346977006f78cc47f7410dbc88a08f7",
+      "body_text": "fn find_nested_blocks<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {\n    if is_target_kind(node.kind()) {\n        return;\n    }\n\n    match node.kind() {\n        \"while_expression\" | \"for_expression\" | \"loop_expression\" => {\n            if let Some(body) = node.child_by_field_name(\"body\") {\n                out.push(body);\n            }\n\n            for field in [\"condition\", \"value\", \"pattern\"] {\n                if let Some(n) = node.child_by_field_name(field) {\n                    find_nested_blocks(n, out);\n                }\n            }\n        }\n\n        \"if_expression\" => {\n            if let Some(consequence) = node.child_by_field_name(\"consequence\") {\n                out.push(consequence);\n            }\n\n            if let Some(condition) = node.child_by_field_name(\"condition\") {\n                find_nested_blocks(condition, out);\n            }\n\n            if let Some(alt) = node.child_by_field_name(\"alternative\") {\n                let mut cursor = alt.walk();\n                for child in alt.named_children(&mut cursor) {\n                    if child.kind() == \"block\" {\n                        out.push(child);\n                    } else {\n                        find_nested_blocks(child, out); \n                    }\n                }\n            }\n        }\n\n        \"match_expression\" => {\n            if let Some(value) = node.child_by_field_name(\"value\") {\n                find_nested_blocks(value, out);\n            }\n\n            if let Some(body) = node.child_by_field_name(\"body\") {\n                let mut cursor = body.walk();\n\n                for arm in body.named_children(&mut cursor) {\n                    if arm.kind() != \"match_arm\" {\n                        continue;\n                    }\n\n                    if let Some(value) = arm.child_by_field_name(\"value\") {\n                        if value.kind() == \"block\" {\n                            out.push(value);\n                        } else {\n                            find_nested_blocks(value, out);\n                        }\n                    }\n                }\n            }\n        }\n\n        \"closure_expression\" => {\n            if let Some(body) = node.child_by_field_name(\"body\") {\n                if body.kind() == \"block\" {\n                    out.push(body);\n                } else {\n                    find_nested_blocks(body, out); \n                }\n            }\n        }\n\n        \"unsafe_block\" | \"async_block\" => {\n            let mut cursor = node.walk();\n\n            if let Some(block) = node\n                .named_children(&mut cursor)\n                .find(|c| c.kind() == \"block\")\n            {\n                out.push(block);\n            }\n        }\n\n        \"block\" => out.push(node),\n        _ => {\n            let mut cursor = node.walk();\n\n            for child in node.named_children(&mut cursor) {\n                find_nested_blocks(child, out);\n            }\n        }\n    }\n}",
+      "body_hash": "15de4234c5e88c75b2e53759d1fcfabad0eeb53d1671de8968ddec8c846fb042"
+    },
+    "src/scan/extract.rs|crate::find_nested_blocks#trailing:032f0b22634a": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::find_nested_blocks#trailing:032f0b22634a",
+      "comment_kind": "Line",
+      "comment_text": "// unbraced closure body",
+      "comment_hash": "032f0b22634af0ed96b982f581b61afe63950e67ddfd1f2fdbc95d501dc1766a",
+      "body_text": "find_nested_blocks(body, out);",
+      "body_hash": "6bad983e45e3092e95f6a1dd6a1aa77b6fc5f08e6cddb97a6e0d060a6af7992c"
+    },
+    "src/scan/extract.rs|crate::find_nested_blocks#trailing:1cd4026ed308": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::find_nested_blocks#trailing:1cd4026ed308",
+      "comment_kind": "Line",
+      "comment_text": "// a chained `else if`",
+      "comment_hash": "1cd4026ed3083ebd46f3e48a01939987d503010d3dfd8397f8866a338e2db505",
+      "body_text": "find_nested_blocks(child, out);",
+      "body_hash": "34b5b8ef4c875ab9ec784c79b196b3a35b228b68a0aaaa0e6dbdacac52b62cef"
+    },
+    "src/scan/extract.rs|crate::free_span_text": {
+      "kind": "Function",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::free_span_text",
+      "comment_kind": "OuterDoc",
+      "comment_text": " A free comment's forward-scoped body: each statement's own text with\n\n any nested block collapsed away (see `collapse_nested_blocks`).\n",
+      "comment_hash": "8b54e5131148dca32cda5692f6a59dea198e90ddbaf803625f841ea56758631d",
+      "body_text": "fn free_span_text(span: &[Node], src: &str) -> String {\n    span.iter()\n        .map(|n| collapse_nested_blocks(n, src))\n        .filter(|s| !s.trim().is_empty())\n        .collect::<Vec<_>>()\n        .join(\"\\n\")\n}",
+      "body_hash": "ca14be8afb78176375df8f068179f1b6fd613e27ea6e5f768e8dd64694a85d8c"
+    },
+    "src/scan/extract.rs|crate::handle_free_group#trailing:602ba733015a": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::handle_free_group#trailing:602ba733015a",
+      "comment_kind": "Line",
+      "comment_text": "// nothing follows before the next comment / end of container",
+      "comment_hash": "602ba733015ae406a71449bf4c52a9a755ef4e386fdb66fff44358954dd92f67",
+      "body_text": "return;",
+      "body_hash": "2e8ebf4c660e619d5d791d2177068e9fb251cd0924ff1a9c2bb8d1b630c65988"
+    },
     "src/scan/extract.rs|crate::handle_trailing_group": {
       "kind": "Function",
       "file": "src/scan/extract.rs",
@@ -259,18 +339,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " A side comment (`stmt(); // like this`)\n",
       "comment_hash": "65744a79ddf643a15a589f6178ad3962a3857d24d3408f6a42228aaba7b5aea0",
-      "body_text": "fn handle_trailing_group(\n    group: &[Node],\n    preceding: &Node,\n    src: &str,\n    file: &str,\n    enclosing_path: &str,\n    dedup: &mut HashMap<String, usize>,\n    out: &mut Vec<ScopedItem>,\n) {\n    let text = group \n        .iter()\n        .map(|c| src[c.byte_range()].to_string())\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n\n    let body = strip_comments_node(*preceding, src);\n\n    if body.trim().is_empty() {\n        return;\n    }\n\n    let item_path = free_item_path(enclosing_path, \"trailing\", &text, dedup);\n    let last = group.last().unwrap();\n    let comment_kind = if last.kind() == \"block_comment\" {\n        CommentKind::Block\n    } else {\n        CommentKind::Line\n    };\n    out.push(ScopedItem {\n        id: enjoin(file, &item_path),\n        kind: ItemKind::Free,\n        file: file.to_string(),\n        item_path,\n        comment_kind,\n        comment_text: text,\n        body_text: body,\n        line: line_of(&group[0]),\n    });\n}",
-      "body_hash": "9ffade9854fa097eade8519b150b20fa7867bca756b0fe93c5f99101601d7756"
-    },
-    "src/scan/extract.rs|crate::scan_container#free:1342a66b838d": {
-      "kind": "Free",
-      "file": "src/scan/extract.rs",
-      "item_path": "crate::scan_container#free:1342a66b838d",
-      "comment_kind": "Line",
-      "comment_text": "// Recurse into nested containers regardless of whether they had a doc comment.",
-      "comment_hash": "1342a66b838d4e04d3ececff63c5607c52230d9e13c425d8a289144bca075033",
-      "body_text": "for child in children {\n        let (sub_kind, body_field) = match child.kind() {\n            \"mod_item\" => (ItemKind::Module, \"body\"),\n            \"struct_item\" => (ItemKind::Struct, \"body\"),\n            \"union_item\" => (ItemKind::Union, \"body\"),\n            \"enum_item\" => (ItemKind::Enum, \"body\"),\n            \"trait_item\" => (ItemKind::Trait, \"body\"),\n            \"impl_item\" => (ItemKind::Impl, \"body\"),\n            \"function_item\" => (ItemKind::Function, \"body\"),\n            \"enum_variant\" => (ItemKind::Variant, \"body\"),\n            \"foreign_mod_item\" => (ItemKind::Extern, \"body\"),\n            _ => continue,\n        };\n\n        let Some(body) = child.child_by_field_name(body_field) else {\n            continue;\n        };\n\n        if matches!(child.kind(), \"struct_item\" | \"union_item\" | \"enum_variant\")\n            && body.kind() != \"field_declaration_list\"\n        {\n            continue; \n        }\n\n        let name = item_name(child, src);\n        let path = format!(\"{enclosing_path}::{name}\");\n        let sub_children = direct_children(body);\n\n        scan_container(&sub_children, src, file, &path, sub_kind, dedup, out);\n    }\n}",
-      "body_hash": "48aed1460d95690338c19680266578008d5e45536bc9eee1b458632ba96096d9"
+      "body_text": "fn handle_trailing_group(\n    group: &[Node],\n    preceding: &Node,\n    src: &str,\n    file: &str,\n    enclosing_path: &str,\n    dedup: &mut HashMap<String, usize>,\n    out: &mut Vec<ScopedItem>,\n) {\n    let text = group \n        .iter()\n        .map(|c| src[c.byte_range()].to_string())\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n\n    let body = strip_comments_node(*preceding, src);\n\n    if body.trim().is_empty() {\n        return;\n    }\n\n    let item_path = free_item_path(enclosing_path, \"trailing\", &text, dedup);\n    let last = group.last().unwrap();\n\n    let comment_kind = if last.kind() == \"block_comment\" {\n        CommentKind::Block\n    } else {\n        CommentKind::Line\n    };\n\n    let item = ScopedItem {\n        id: enjoin(file, &item_path),\n        kind: ItemKind::Free,\n        file: file.to_string(),\n        item_path,\n        comment_kind,\n        comment_text: text,\n        body_text: body,\n        line: line_of(&group[0]),\n    };\n\n    out.push(item);\n}",
+      "body_hash": "0c272dbf9d25b4530253b9131ff8ceeb80e97e26801563468d58be0e15f54516"
     },
     "src/scan/extract.rs|crate::scan_container#free:30d7a332b93c": {
       "kind": "Free",
@@ -279,8 +349,78 @@
       "comment_kind": "Line",
       "comment_text": "// Check for `//!`/`/*! */` comments at the start, usually found at the top level of a file.",
       "comment_hash": "30d7a332b93c9f90050ca800c6985ea9632f7c29bb12979c378d093c72b3ce3f",
-      "body_text": "let mut lead = 0;\n\n    while lead < n && is_comment(&children[lead]) && is_inner_doc(&children[lead]) {\n        lead += 1;\n    }\n\n    if lead > 0 {\n        let group = &children[0..lead];\n\n        let text = group\n            .iter()\n            .map(|c| doc_text(c, src))\n            .collect::<Vec<_>>()\n            .join(\"\\n\");\n\n        let body = shallow_container_signature(&children[lead..], src);\n\n        let item = ScopedItem {\n            id: enjoin(file, enclosing_path),\n            kind: enclosing_kind,\n            file: file.to_string(),\n            item_path: enclosing_path.to_string(),\n            comment_kind: CommentKind::InnerDoc,\n            comment_text: text,\n            body_text: body,\n            line: line_of(&group[0]),\n        };\n\n        out.push(item);\n\n        i = lead;\n    }\n\n    while i < n {\n        if !is_comment(&children[i]) {\n            i += 1;\n            continue;\n        }\n\n        \n        let group_start = i;\n\n        while i < n && is_comment(&children[i]) {\n            i += 1;\n        }\n\n        \n        let group = &children[group_start..i];\n        let last = group.last().unwrap();\n\n        \n        \n        \n        let mut item_idx = i;\n        while item_idx < n && children[item_idx].kind() == \"attribute_item\" {\n            item_idx += 1;\n        }\n\n        if is_doc_comment(last)\n            && !is_inner_doc(last)\n            && let Some(next) = children.get(item_idx)\n            && is_item_like(next.kind())\n        {\n            let text = group\n                .iter()\n                .filter(|c| is_doc_comment(c))\n                .map(|c| doc_text(c, src))\n                .collect::<Vec<_>>()\n                .join(\"\\n\");\n\n            let name = item_name(next, src);\n            let path = format!(\"{enclosing_path}::{name}\");\n\n            let item = ScopedItem {\n                id: enjoin(file, &path),\n                kind: kind_of(next.kind()),\n                file: file.to_string(),\n                item_path: path,\n                comment_kind: CommentKind::OuterDoc,\n                comment_text: text,\n                body_text: item_body_text(next, src),\n                line: line_of(&group[0]),\n            };\n\n            out.push(item);\n\n            i = item_idx + 1;\n            continue;\n        }\n\n        \n        let trailing = group_start > 0\n            && children[group_start - 1].end_position().row == group[0].start_position().row;\n\n        if trailing {\n            handle_trailing_group(\n                group,\n                &children[group_start - 1],\n                src,\n                file,\n                enclosing_path,\n                dedup,\n                out,\n            );\n        } else {\n            handle_free_group(group, children, i, src, file, enclosing_path, dedup, out);\n        }\n    }",
-      "body_hash": "9bb42615e80a64ef85134d0b3bf652673c12f8cca4b1b759a343c0591891f204"
+      "body_text": "let mut lead = 0;\nwhile lead < n && is_comment(&children[lead]) && is_inner_doc(&children[lead]) {}\nif lead > 0 {}\nwhile i < n {}",
+      "body_hash": "5d9dcae64ac2983e079659a20f24ddba5da6ecd22fce8fe48a3598bcb6f31de9"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:581d6979bc58": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:581d6979bc58",
+      "comment_kind": "Line",
+      "comment_text": "// Attributes `#[arg(long)]`, `#[derive(...)]` etc are siblings of\n// the item they annotate, not part of it. A doc comment can have\n// one or more of these sitting between it",
+      "comment_hash": "581d6979bc581976daa46cc3baa8bd369247db92b4b8ea4c34b57cd3da1c48e5",
+      "body_text": "let mut item_idx = i;\nwhile item_idx < n && children[item_idx].kind() == \"attribute_item\" {}\nif is_doc_comment(last)\n            && !is_inner_doc(last)\n            && let Some(next) = children.get(item_idx)\n            && is_target_kind(next.kind())\n        {}",
+      "body_hash": "cf62c86c8843bbb5dec8f1c994ce4cf43bc7c7f05c8c08cb43f2f3e584cebd9f"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:642a7dcfa2ae": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:642a7dcfa2ae",
+      "comment_kind": "Line",
+      "comment_text": "// None comments ignored. Starting position is the first comment.",
+      "comment_hash": "642a7dcfa2ae5959ae99fecfc3a01c7f0787f2d12b70b1c801aaa5fc82eb1b29",
+      "body_text": "let group_start = i;\nwhile i < n && is_comment(&children[i]) {}",
+      "body_hash": "69a7726de5a6c3e769749005c027e0a84826854abbb0a5b04d357ac003767a51"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:78de5f652235": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:78de5f652235",
+      "comment_kind": "Line",
+      "comment_text": "// Comment location captured",
+      "comment_hash": "78de5f652235f06a17fd8480839450367b2ac1df39adcef698d32d1c13b932c8",
+      "body_text": "let group = &children[group_start..i];\nlet last = group.last().unwrap();",
+      "body_hash": "e257c8e6e70236ebe8021ba136c48b349115cc051a7567688e9ed4b32ebddfbc"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:bc20afbebc22": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:bc20afbebc22",
+      "comment_kind": "Line",
+      "comment_text": "// Not a doc comment attached to the item",
+      "comment_hash": "bc20afbebc22d35f336f13d93bcb1e0cb9ca22a9e96dd575c529657e9d7b0795",
+      "body_text": "let trailing = group_start > 0\n            && children[group_start - 1].end_position().row == group[0].start_position().row;\nif trailing {} else {}\n}",
+      "body_hash": "1836c9f6a62e4e18a20d30babdce7c696ab6a24caf2ea176c7b715b07955d555"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:c218f776bc65": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:c218f776bc65",
+      "comment_kind": "Line",
+      "comment_text": "// Not a named item. Look anywhere in this statement for a\n// nested block and recurse into each one",
+      "comment_hash": "c218f776bc65e1475c29c0973a7c248d18701fced121c6fb38f375da54155c9e",
+      "body_text": "let mut blocks = Vec::new();\nfind_nested_blocks(*child, &mut blocks);\nfor block in blocks {}\ncontinue;\n}",
+      "body_hash": "41dceb301fee86687bb11a6bc330cf9d63283cdec5aabbd0c5b79b23b0232bd7"
+    },
+    "src/scan/extract.rs|crate::scan_container#free:daaab12e2c84": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#free:daaab12e2c84",
+      "comment_kind": "Line",
+      "comment_text": "// Recurse into nested containers",
+      "comment_hash": "daaab12e2c84d2bdbf2fb05d6447bce63b5201c912d6ea4287a71633a5ece9b7",
+      "body_text": "for child in children {}\n}",
+      "body_hash": "7a0ede94a91dec5756ff1f652b81024238d23c6305c8f26febbeaea85a30a0a9"
+    },
+    "src/scan/extract.rs|crate::scan_container#trailing:034ea7522044": {
+      "kind": "Free",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::scan_container#trailing:034ea7522044",
+      "comment_kind": "Line",
+      "comment_text": "// tuple struct/union/variant - no named members to recurse into",
+      "comment_hash": "034ea7522044babece0d2390b5df95d04e5615574dd90784080d4a8ce874d7ab",
+      "body_text": "continue;",
+      "body_hash": "e45a5fab5530440fded81e5e92be7688c946b655bca1dfbaf2b80a156d614c7e"
     },
     "src/scan/extract.rs|crate::shallow_signature": {
       "kind": "Function",
@@ -311,6 +451,16 @@
       "comment_hash": "0c8f49ea1e92ad45e3302a218f9f68ee2bacd4e9b0ab86948324df2400926258",
       "body_text": "pub fn scan_files_for_ids<'a>(\n    root: &Path,\n    ids: impl IntoIterator<Item = &'a str>,\n) -> Result<Vec<ScopedItem>> {\n    let files: BTreeSet<&str> = ids\n        .into_iter()\n        .filter_map(|id| id.split_once('|').map(|(file, _)| file))\n        .collect();\n\n    let mut out = Vec::new();\n\n    for rel in files {\n        let abs = walk::to_abs(root, rel);\n        let Ok(src) = std::fs::read_to_string(&abs) else {\n            continue; \n        };\n\n        let items = extract::extract_file(rel, &src)\n            .with_context(|| format!(\"parsing {}\", abs.display()))?;\n\n        out.extend(items);\n    }\n\n    Ok(out)\n}",
       "body_hash": "baaeaf77579affc8e21785eb9d529feea3985c00d6c9fee3e716dcb1685d466f"
+    },
+    "src/scan/mod.rs|crate::scan_files_for_ids#trailing:b46546ceadc4": {
+      "kind": "Free",
+      "file": "src/scan/mod.rs",
+      "item_path": "crate::scan_files_for_ids#trailing:b46546ceadc4",
+      "comment_kind": "Line",
+      "comment_text": "// file gone/renamed since the id was issued",
+      "comment_hash": "b46546ceadc494e74c194f707efd14420d33a854e22aa4567cb3143d54f77426",
+      "body_text": "continue;",
+      "body_hash": "e45a5fab5530440fded81e5e92be7688c946b655bca1dfbaf2b80a156d614c7e"
     },
     "src/scan/mod.rs|crate::scan_project": {
       "kind": "Function",
@@ -349,28 +499,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Compares a fresh scan against this baseline. An entry becomes a\n\n candidate only when its comment hash is unchanged but its body hash\n\n isn't.\n",
       "comment_hash": "0bb878331d42a802af3440493fff32dfb1c9c40e8d9de3d9c336c65edd14ef65",
-      "body_text": "pub fn diff(&self, fresh: &[ScopedItem]) -> DiffResult {\n        let fresh_map: BTreeMap<&str, &ScopedItem> =\n            fresh.iter().map(|i| (i.id.as_str(), i)).collect();\n\n        let mut new_entries = BTreeMap::new();\n        let mut candidates = Vec::new();\n        let mut added = 0;\n        let mut updated = 0;\n        let mut unchanged = 0;\n\n        for (id, item) in &fresh_map {\n            let comment_hash = item.comment_hash();\n            let body_hash = item.body_hash();\n\n            match self.entries.get(*id) {\n                None => {\n                    added += 1;\n                    new_entries.insert(id.to_string(), SnapshotEntry::from(*item));\n                }\n                Some(prev) => {\n                    if prev.comment_hash == comment_hash && prev.body_hash != body_hash {\n                        new_entries.insert(id.to_string(), prev.clone());\n\n                        let to_push = Candidate {\n                            id: id.to_string(),\n                            kind: item.kind,\n                            file: item.file.clone(),\n                            item_path: item.item_path.clone(),\n                            line: item.line,\n                            comment_kind: item.comment_kind,\n                            comment_text: item.comment_text.clone(),\n                            old_body_text: prev.body_text.clone(),\n                            new_body_text: item.body_text.clone(),\n                            reason: format!(\n                                \"{} changed but its comment was not updated\",\n                                item.kind.label()\n                            ),\n                        };\n\n                        candidates.push(to_push);\n                    } else {\n                        if prev.comment_hash != comment_hash || prev.body_hash != body_hash {\n                            updated += 1;\n                        } else {\n                            unchanged += 1;\n                        }\n\n                        new_entries.insert(id.to_string(), SnapshotEntry::from(*item));\n                    }\n                }\n            }\n        }\n\n        let pruned = self\n            .entries\n            .keys()\n            .filter(|id| !fresh_map.contains_key(id.as_str()))\n            .count();\n\n        let mut snapshot = Snapshot::new();\n        snapshot.entries = new_entries;\n\n        DiffResult {\n            candidates,\n            new_baseline: snapshot,\n            added,\n            updated,\n            unchanged,\n            pruned,\n        }\n    }",
-      "body_hash": "0e20982defc3f90639c8eb908c774378278ef375dca1b7b78cbe8caf136919ad"
-    },
-    "tests/check_candidates.rs|crate::apply_verdicts_only_rescans_files_the_verdicts_touch#free:37b821fe7710": {
-      "kind": "Free",
-      "file": "tests/check_candidates.rs",
-      "item_path": "crate::apply_verdicts_only_rescans_files_the_verdicts_touch#free:37b821fe7710",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: apply_verdicts used to re-scan the *entire* project just\n// to confirm a handful of candidates. Proof it no longer does: an\n// unrelated file with invalid UTF-8 (which a full-project scan can't\n// even read) sits alongside the file actually being confirmed - if\n// apply_verdicts touched it, this would error out before ever reaching\n// the verdict loop.",
-      "comment_hash": "37b821fe771077bb663a45879828c53b3925ae4a3ae709df7076f32ed5c6ddf7",
-      "body_text": "let p = Project::new();\n    p.write(\"src/lib.rs\", \"/// doc\\npub fn f() -> i32 {\\n    1\\n}\\n\");\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\"src/lib.rs\", \"/// doc\\npub fn f() -> i32 {\\n    2\\n}\\n\");\n    let outcome = engine::check(p.path()).unwrap();\n    assert_eq!(outcome.candidates.len(), 1);\n    let id = outcome.candidates[0].id.clone();\n\n    std::fs::write(p.path().join(\"src/broken.rs\"), [0xFF, 0xFE, 0x00, 0xFF]).unwrap();\n\n    let apply = engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id,\n            verdict: Verdict::Yes,\n        }],\n    )\n    .unwrap();\n    assert_eq!(apply.updated, 1);\n\n    let outcome2 = engine::check(p.path());\n    assert!(\n        outcome2.is_err(),\n        \"sanity check: a full-project check must fail on the invalid-UTF-8 file\"\n    );\n}",
-      "body_hash": "5e332c7274de1b359473c8c69901a6396cbab2c2f337acec3814485a0f12d354"
-    },
-    "tests/check_candidates.rs|crate::simultaneous_change_is_silently_absorbed_into_baseline#free:b431272c4c9f": {
-      "kind": "Free",
-      "file": "tests/check_candidates.rs",
-      "item_path": "crate::simultaneous_change_is_silently_absorbed_into_baseline#free:b431272c4c9f",
-      "comment_kind": "Line",
-      "comment_text": "// Baseline now reflects the new pairing - checking again finds nothing.",
-      "comment_hash": "b431272c4c9f82012dc3f8ca99d5ab909c7f2efee4c83a31457be277fd9305ec",
-      "body_text": "let outcome2 = engine::check(p.path()).unwrap();\n    assert!(outcome2.candidates.is_empty());\n    assert_eq!(outcome2.unchanged, 1);\n}",
-      "body_hash": "e48cc30e26bd58e9ee6617dc921ea9809108cf0187a2e35268b31f29c7d6d615"
+      "body_text": "#[must_use]\npub fn diff(&self, fresh: &[ScopedItem]) -> DiffResult {\n        let fresh_map: BTreeMap<&str, &ScopedItem> =\n            fresh.iter().map(|i| (i.id.as_str(), i)).collect();\n\n        let mut new_entries = BTreeMap::new();\n        let mut candidates = Vec::new();\n        let mut added = 0;\n        let mut updated = 0;\n        let mut unchanged = 0;\n\n        for (id, item) in &fresh_map {\n            let comment_hash = item.comment_hash();\n            let body_hash = item.body_hash();\n\n            match self.entries.get(*id) {\n                None => {\n                    added += 1;\n                    new_entries.insert(id.to_string(), SnapshotEntry::from(*item));\n                }\n                Some(prev) => {\n                    if prev.comment_hash == comment_hash && prev.body_hash != body_hash {\n                        new_entries.insert(id.to_string(), prev.clone());\n\n                        let to_push = Candidate {\n                            id: id.to_string(),\n                            kind: item.kind,\n                            file: item.file.clone(),\n                            item_path: item.item_path.clone(),\n                            line: item.line,\n                            comment_kind: item.comment_kind,\n                            comment_text: item.comment_text.clone(),\n                            old_body_text: prev.body_text.clone(),\n                            new_body_text: item.body_text.clone(),\n                            reason: format!(\n                                \"{} changed but its comment was not updated\",\n                                item.kind.label()\n                            ),\n                        };\n\n                        candidates.push(to_push);\n                    } else {\n                        if prev.comment_hash != comment_hash || prev.body_hash != body_hash {\n                            updated += 1;\n                        } else {\n                            unchanged += 1;\n                        }\n\n                        new_entries.insert(id.to_string(), SnapshotEntry::from(*item));\n                    }\n                }\n            }\n        }\n\n        let pruned = self\n            .entries\n            .keys()\n            .filter(|id| !fresh_map.contains_key(id.as_str()))\n            .count();\n\n        let mut snapshot = Snapshot::new();\n        snapshot.entries = new_entries;\n\n        DiffResult {\n            candidates,\n            new_baseline: snapshot,\n            added,\n            updated,\n            unchanged,\n            pruned,\n        }\n    }",
+      "body_hash": "a62f8833fda437edfc22369d4eb5ca67aaae22707600233b4912f8a4b4be1bfc"
     },
     "tests/common/mod.rs|crate::impl Project::write": {
       "kind": "Function",
@@ -382,46 +512,6 @@
       "body_text": "pub fn write(&self, rel: &str, contents: &str) {\n        let full = self.dir.path().join(rel);\n        if let Some(parent) = full.parent() {\n            fs::create_dir_all(parent).expect(\"create parent dir\");\n        }\n        fs::write(full, contents).expect(\"write fixture file\");\n    }",
       "body_hash": "3e750bd4adbe3a71294cefc6379116cd160950ec1e9571526c4027a5c0983f83"
     },
-    "tests/identity.rs|crate::duplicate_identical_comments_in_one_function_are_tracked_independently#free:b6f447266c9d": {
-      "kind": "Free",
-      "file": "tests/identity.rs",
-      "item_path": "crate::duplicate_identical_comments_in_one_function_are_tracked_independently#free:b6f447266c9d",
-      "comment_kind": "Line",
-      "comment_text": "// Only the first one's code changes - only it should be flagged.",
-      "comment_hash": "b6f447266c9d0e23b12e26ed5e8d1ced9fca1447e4e1efc5331913b26e2c619d",
-      "body_text": "p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // note\\n    let a = 100;\\n    // note\\n    let b = 2;\\n}\\n\",\n    );\n    let check = engine::check(p.path()).unwrap();\n    assert_eq!(check.candidates.len(), 1);\n    assert!(check.candidates[0].old_body_text.contains(\"let a = 1\"));\n}",
-      "body_hash": "138dfff668fc47afd8f160d23af2c868afac1d6e56a6ae5070731ee6c498d4fb"
-    },
-    "tests/identity.rs|crate::free_comment_end_to_end_confirm_roundtrip#free:5d6aa18907f1": {
-      "kind": "Free",
-      "file": "tests/identity.rs",
-      "item_path": "crate::free_comment_end_to_end_confirm_roundtrip#free:5d6aa18907f1",
-      "comment_kind": "Line",
-      "comment_text": "// Same round trip as the doc-comment tests, but for a plain `//`\n// comment - this is the case the two bugs above were masking.",
-      "comment_hash": "5d6aa18907f1e9940c94f28ccecd3b5e3284ef1531c3f2240215da57442df1bd",
-      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 10;\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // uses the default limit\\n    let limit = 20;\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert_eq!(outcome.candidates.len(), 1);\n    let id = outcome.candidates[0].id.clone();\n\n    engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id,\n            verdict: Verdict::No,\n        }],\n    )\n    .unwrap();\n    assert_eq!(engine::status(p.path()).unwrap().len(), 1);\n}",
-      "body_hash": "1c28bc496c36ffd36462d222845b00d48ea2d1f208641dc5896fd0964d037979"
-    },
-    "tests/identity.rs|crate::free_comment_id_stays_stable_while_its_code_changes#free:7bc8c3abe8b4": {
-      "kind": "Free",
-      "file": "tests/identity.rs",
-      "item_path": "crate::free_comment_id_stays_stable_while_its_code_changes#free:7bc8c3abe8b4",
-      "comment_kind": "Line",
-      "comment_text": "// This is the actual staleness-detection contract for regular\n// comments: the id must NOT be derived from the code being described,\n// or a code change would always look like \"old entry gone, new entry\n// added\" instead of \"same entry, body drifted\".",
-      "comment_hash": "7bc8c3abe8b448c13f5c5ec089a4e7730e6afbabec93adf44253bd76e37d8b34",
-      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // note\\n    let x = 1;\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"pub fn f() {\\n    // note\\n    let x = 999;\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert_eq!(\n        outcome.added, 0,\n        \"the id must not change just because the code did\"\n    );\n    assert_eq!(outcome.pruned, 0);\n    assert_eq!(outcome.candidates.len(), 1);\n}",
-      "body_hash": "0751c019bb1ee2fdc308cb97a93b5a148a377d44800de58891fea23dc30598e1"
-    },
-    "tests/identity.rs|crate::same_path_in_two_files_does_not_collide#free:a0821992b9f5": {
-      "kind": "Free",
-      "file": "tests/identity.rs",
-      "item_path": "crate::same_path_in_two_files_does_not_collide#free:a0821992b9f5",
-      "comment_kind": "Line",
-      "comment_text": "// Changing only one file's `helper` body must flag only that one.",
-      "comment_hash": "a0821992b9f5b4c0e6931b020f3260db84d413f84650305108b7d80df970e94b",
-      "body_text": "p.write(\n        \"src/lib.rs\",\n        \"/// doc for lib\\npub fn helper() {\\n    1\\n}\\n\",\n    );\n    let check = engine::check(p.path()).unwrap();\n    assert_eq!(check.candidates.len(), 1);\n    assert_eq!(check.candidates[0].file, \"src/lib.rs\");\n}",
-      "body_hash": "40ef858be23626904656c8d308ac10bb4a4eef42f9e9b52bc92043d1f09c3368"
-    },
     "tests/known_issues.rs|crate::no_verdict_flags_a_known_issue_visible_via_status#free:03bd74b1c47f": {
       "kind": "Free",
       "file": "tests/known_issues.rs",
@@ -429,7 +519,7 @@
       "comment_kind": "Line",
       "comment_text": "// Baseline moved forward, so it doesn't resurface as a fresh candidate.",
       "comment_hash": "03bd74b1c47fa7d63f1be715ed926138e4226b045aea72122c43920ee8e26bfa",
-      "body_text": "let outcome2 = engine::check(p.path()).unwrap();\n    assert!(outcome2.candidates.is_empty());\n}",
+      "body_text": "let outcome2 = engine::check(p.path()).unwrap();\nassert!(outcome2.candidates.is_empty());\n}",
       "body_hash": "cb60eeaa1d75dadac808ec3a29ee2efccd5a69115068d4fc6dc240f65ab3ea2b"
     },
     "tests/known_issues.rs|crate::resolve_manually_clears_an_issue#free:9b3f15f1f7db": {
@@ -449,88 +539,8 @@
       "comment_kind": "Line",
       "comment_text": "// A later re-review (e.g. via a second `confirm` call) can say \"yes\"\n// and clear it without needing the comment text to change.",
       "comment_hash": "2443d3534d3ee836a8450018c5d5feb07bdf1bc80687c4d2d7093eee9a9e8841",
-      "body_text": "engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id: c.id,\n            verdict: Verdict::Yes,\n        }],\n    )\n    .unwrap();\n    assert!(engine::status(p.path()).unwrap().is_empty());\n}",
+      "body_text": "engine::apply_verdicts(\n        p.path(),\n        &[ConfirmInput {\n            id: c.id,\n            verdict: Verdict::Yes,\n        }],\n    )\n    .unwrap();\nassert!(engine::status(p.path()).unwrap().is_empty());\n}",
       "body_hash": "eb240af017b347db82df33a0d6b68c62d496c891f8809a921b4bd0617ff42a59"
-    },
-    "tests/scoping.rs|crate::doc_comment_attaches_through_an_intervening_attribute#free:15e1be9450cd": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::doc_comment_attaches_through_an_intervening_attribute#free:15e1be9450cd",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: `#[arg(long)]` (or any attribute) between a doc comment\n// and the item it documents is a sibling node in the parse tree, not\n// part of the item - the attachment check used to look only at the\n// *very next* sibling, see it wasn't item-like, and misclassify the\n// doc comment as a free comment instead. Idiomatic clap-derive code\n// (doc comment, then `#[arg(...)]`, then the field) hits this directly.",
-      "comment_hash": "15e1be9450cd45719635d0a355f4639cdf6f162c235d33b093bae55de2b19815",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"pub struct S {\\n    /// doc\\n    #[arg(long)]\\n    pub force: i32,\\n}\\n\",\n        \"pub struct S {\\n    /// doc\\n    #[arg(long)]\\n    pub force: u64,\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::Field);\n    assert_eq!(c.item_path, \"crate::S::force\");\n}",
-      "body_hash": "c17b8c88c9e162b1a0669254e299ae804cb23a9cab3b2a5b4931daa1720ac237"
-    },
-    "tests/scoping.rs|crate::extern_block_body_is_recursed_into#free:2fca8a7e1030": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::extern_block_body_is_recursed_into#free:2fca8a7e1030",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: `foreign_mod_item` wasn't in the recursion allowlist\n// either, so `scan_container` never even descended into its body - a\n// doc comment on an individual FFI signature was completely invisible,\n// not merely misclassified.",
-      "comment_hash": "2fca8a7e1030cb0227a5a9def65962068c7c7e5a21c103a626a19d6924ccd78a",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"extern \\\"C\\\" {\\n    /// doc\\n    fn foo(x: i32);\\n}\\n\",\n        \"extern \\\"C\\\" {\\n    /// doc\\n    fn foo(x: i64);\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::Function);\n    assert_eq!(c.item_path, \"crate::extern \\\"C\\\"::foo\");\n}",
-      "body_hash": "3c4fb31327450f77f621c1410b1db3d83af0e4b9ffc23c15c0c4bf7d3f26f53f"
-    },
-    "tests/scoping.rs|crate::extern_block_scope#free:a3cd16fe1d61": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::extern_block_scope#free:a3cd16fe1d61",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: `foreign_mod_item` (an `extern \"C\" { ... }` block) wasn't\n// in the item allowlist, so a doc comment on the block itself fell\n// through to free-comment scoping.",
-      "comment_hash": "a3cd16fe1d6149b3a219719dd20320ff36550a9c6f840bb9a5cee144a270e6d2",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"/// doc\\nextern \\\"C\\\" {\\n    fn foo();\\n}\\n\",\n        \"/// doc\\nextern \\\"C\\\" {\\n    fn foo(x: i32);\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::Extern);\n    assert_eq!(c.item_path, \"crate::extern \\\"C\\\"\");\n}",
-      "body_hash": "19c431552182b7aab744338640c98eb8af0dbc1ef10c6547c1d134ae45dbfd17"
-    },
-    "tests/scoping.rs|crate::field_inside_a_struct_like_enum_variant_is_its_own_scope#free:0999abdf2386": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::field_inside_a_struct_like_enum_variant_is_its_own_scope#free:0999abdf2386",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: a doc comment on a field inside a *struct-like* enum\n// variant (`Variant { field: T }`) used to be invisible entirely - the\n// recursion into nested containers didn't descend into `enum_variant`\n// bodies, so the doc comment was silently stripped as a nested comment\n// instead of being tracked.",
-      "comment_hash": "0999abdf2386224077b5c59c01992c9a37dfa0c669bfd2f8331c47a83245ed11",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"pub enum E {\\n    Check {\\n        path: i32,\\n        /// doc\\n        json: bool,\\n    },\\n}\\n\",\n        \"pub enum E {\\n    Check {\\n        path: i32,\\n        /// doc\\n        json: u8,\\n    },\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::Field);\n    assert_eq!(c.item_path, \"crate::E::Check::json\");\n}",
-      "body_hash": "f718697b7a5dd5095f90f7183b1bf403909fd93085c282e5f6d81247b86eda6c"
-    },
-    "tests/scoping.rs|crate::impl_scope_ignores_method_body_edits#free:b8aea6db0d79": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::impl_scope_ignores_method_body_edits#free:b8aea6db0d79",
-      "comment_kind": "Line",
-      "comment_text": "// The impl block's own doc is hashed against its *shallow* member\n// signature list, not full method bodies - so a body-only edit inside\n// a method must NOT flag the impl-level doc comment.",
-      "comment_hash": "b8aea6db0d797338ec584bef24a653674fd9da50affac1c8f3cd23165c939397",
-      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"pub struct S;\\n/// doc\\nimpl S {\\n    pub fn a(&self) -> i32 {\\n        1\\n    }\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"pub struct S;\\n/// doc\\nimpl S {\\n    pub fn a(&self) -> i32 {\\n        2\\n    }\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert!(\n        outcome.candidates.is_empty(),\n        \"impl doc should be shallow, got {:#?}\",\n        outcome.candidates\n    );\n}",
-      "body_hash": "50cb3649b4daa242e86cff0aa18d0d758c64e4e243f54a873587876d95910af4"
-    },
-    "tests/scoping.rs|crate::macro_rules_scope#free:aa91646e5e44": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::macro_rules_scope#free:aa91646e5e44",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: `macro_rules!` definitions weren't in the item allowlist,\n// so a doc comment on one fell through to free-comment scoping instead\n// of attaching to the macro.",
-      "comment_hash": "aa91646e5e4414d6fe4ae2db6441d1dd6581edd0320bf883601547909bbbb408",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"/// doc\\nmacro_rules! double {\\n    ($x:expr) => {\\n        $x * 2\\n    };\\n}\\n\",\n        \"/// doc\\nmacro_rules! double {\\n    ($x:expr) => {\\n        $x * 3\\n    };\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::Macro);\n    assert_eq!(c.item_path, \"crate::double\");\n}",
-      "body_hash": "09d17bd83091c603e2d106316aee49c34a7436dfa7358ec8398491155bb42eb7"
-    },
-    "tests/scoping.rs|crate::reformatting_alone_never_creates_a_candidate#free:2c7bf8482860": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::reformatting_alone_never_creates_a_candidate#free:2c7bf8482860",
-      "comment_kind": "Line",
-      "comment_text": "// Hashing is whitespace-normalized, so pure reindentation/reformatting\n// must not be mistaken for a real body change.",
-      "comment_hash": "2c7bf8482860e30b12d3d36a5c7d9a979ff2e82e36375b1cfa90fc6acbe6de7d",
-      "body_text": "let p = Project::new();\n    p.write(\n        \"src/lib.rs\",\n        \"/// doc\\npub fn f(a: i32, b: i32) -> i32 {\\n    a + b\\n}\\n\",\n    );\n    engine::init(p.path(), false).unwrap();\n\n    p.write(\n        \"src/lib.rs\",\n        \"/// doc\\npub fn f(a: i32, b: i32) -> i32 {\\n        a\\n        +\\n        b\\n}\\n\",\n    );\n    let outcome = engine::check(p.path()).unwrap();\n    assert!(outcome.candidates.is_empty());\n    assert_eq!(outcome.unchanged, 1);\n}",
-      "body_hash": "0b22f192116de09c661ae2e0ab2bff07008f47401b4e6f0a46ed5284b6399414"
-    },
-    "tests/scoping.rs|crate::trait_associated_type_scope#free:18e0ee8544d3": {
-      "kind": "Free",
-      "file": "tests/scoping.rs",
-      "item_path": "crate::trait_associated_type_scope#free:18e0ee8544d3",
-      "comment_kind": "Line",
-      "comment_text": "// Regression: a trait's associated type declaration (`type Item;`)\n// parses as its own `associated_type` node, distinct from `type_item`\n// (a real type alias) - it wasn't in the item allowlist either, so its\n// doc comment fell through to free-comment scoping too.",
-      "comment_hash": "18e0ee8544d3c7fb0d056b5d4722f688ff0b4f3349afd7b32221b0bdcee723c1",
-      "body_text": "let p = Project::new();\n    let c = candidate_for(\n        &p,\n        \"pub trait T {\\n    /// doc\\n    type Item;\\n}\\n\",\n        \"pub trait T {\\n    /// doc\\n    type Item: Clone;\\n}\\n\",\n    );\n    assert_eq!(c.kind, ItemKind::TypeAlias);\n    assert_eq!(c.item_path, \"crate::T::Item\");\n}",
-      "body_hash": "484ea9e7823ca13e0c6afae1e8f3adf599577b24fd9f582cd51ff17a0ec0d999"
     }
   }
 }
