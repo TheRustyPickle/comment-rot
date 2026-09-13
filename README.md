@@ -8,7 +8,6 @@ Finds comments that went stale when the code next to them changed.
 
 Rot snapshots each comment alongside the code it's attached to. On the next
 scan, code changed but the comment didn't gets flagged for review.
-Both changed together are assumed intentional, skipped silently.
 Comments are tracked by what they document, not by line number, so unrelated
 edits never cause false positives.
 
@@ -31,6 +30,26 @@ rot resolve <id>      # dismiss a known issue
 `check` and `status` prompt interactively by default. Add `--json` to either
 for machine-readable output instead which is meant for driving Rot from an editor
 or another tool.
+
+## Neovim plugin
+
+A Neovim frontend lives in [`lua/`](lua)
+
+```lua
+return {
+    "https://github.com/TheRustyPickle/comment-rot/",
+    build = "cargo build --release",
+    keys = {
+        { "<leader>ri", "<cmd>RotInit<cr>", desc = "Rot init" },
+        { "<leader>rc", "<cmd>RotCheck<cr>", desc = "Rot check" },
+        { "<leader>rs", "<cmd>RotStatus<cr>", desc = "Rot status" },
+        { "<leader>rr", "<cmd>RotResolve<cr>", desc = "Rot resolve" },
+    },
+    opts = {},
+}
+```
+
+See [`lua/README.md`](lua/README.md) for commands, keymaps, and colors.
 
 ## Known limitations
 
