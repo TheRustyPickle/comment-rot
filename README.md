@@ -1,6 +1,15 @@
-<div align="center">
+<!-- rumdl-disable-file no-inline-html -->
+<div align="center"> <!-- rumdl-disable-line first-line-heading -->
 
 # Comment Rot
+
+<a href="https://wakatime.com/@RustyPickle"><img src="https://wakatime.com/badge/github/TheRustyPickle/comment-rot.svg" alt="wakatime"></a>
+<a href="https://crates.io/crates/comment-rot">
+<img src="https://img.shields.io/crates/v/comment-rot.svg?style=flat-square&logo=rust&color=orange"/></a>
+<a href="https://github.com/TheRustyPickle/comment-rot/releases/latest">
+<img src="https://img.shields.io/github/v/release/TheRustyPickle/comment-rot?style=flat-square&logo=github&color=orange"/></a>
+<a href="https://crates.io/crates/comment-rot">
+<img src="https://img.shields.io/crates/d/comment-rot?style=flat-square"/></a>
 
 </div>
 
@@ -13,9 +22,26 @@ edits never cause false positives.
 
 ## Install
 
-```sh
-cargo install --path .
-```
+**1. Run from Source Code:**
+
+* Clone the repository
+`
+git clone https://github.com/TheRustyPickle/comment-rot
+`
+* Run with Cargo
+`
+cargo run --release
+`
+
+**2. Run the Latest Release:**
+
+* Download the latest executable from [Release](https://github.com/TheRustyPickle/comment-rot/releases/latest).
+* Unzip the archive and run the binary.
+
+**3. Install from Cargo:**
+
+* Install with `cargo install comment-rot`
+* Run with the command `rot`
 
 ## Usage
 
@@ -26,10 +52,6 @@ rot confirm           # apply verdicts (reads JSON from stdin)
 rot status            # list issues flagged but not yet fixed
 rot resolve <id>      # dismiss a known issue
 ```
-
-`check` and `status` prompt interactively by default. Add `--json` to either
-for machine-readable output instead which is meant for driving Rot from an editor
-or another tool.
 
 ## Neovim plugin
 
@@ -53,13 +75,13 @@ See [`lua/README.md`](lua/README.md) for commands, keymaps, and colors.
 
 ## Known limitations
 
-- Comments nested inside a single expression (mid method-chain
+* Comments nested inside a single expression (mid method-chain
   `.iter() // note`) aren't tracked. Only comments sitting between whole
   statements/items are.
-- Item paths are built from each file's own AST, not Rust's real module
+* Item paths are built from each file's own AST, not Rust's real module
   graph. Two files can't currently be resolved as the same logical module
   via `mod` declarations elsewhere.
-- Only supports Rust files
+* Only supports Rust files
 
 ## Contributing
 
