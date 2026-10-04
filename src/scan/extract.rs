@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tree_sitter::{Node, Parser};
 
 use crate::hashing::{normalize_for_hash, short_anchor};
@@ -40,7 +40,34 @@ pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {
         &mut dedup,
         &mut out,
     );
+
+    make_ids_unique(&mut out);
+
     Ok(out)
+}
+
+/// Force all ids to be unique
+fn make_ids_unique(items: &mut [ScopedItem]) {
+    let mut used: HashSet<String> = HashSet::new();
+
+    for item in items {
+        if used.insert(item.id.clone()) {
+            continue;
+        }
+
+        let anchor = short_anchor(&normalize_for_hash(&item.comment_text));
+        let base = format!("{}#{anchor}", item.id);
+
+        let mut id = base.clone();
+        let mut n = 1;
+
+        while !used.insert(id.clone()) {
+            id = format!("{base}:{n}");
+            n += 1;
+        }
+
+        item.id = id;
+    }
 }
 
 /// Every entry's `id` is qualified by file, on top of its human-readable
