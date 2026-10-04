@@ -135,3 +135,195 @@ pub fn f() {
     .unwrap();
     assert_eq!(engine::status(p.path()).unwrap().len(), 1);
 }
+
+#[test]
+fn two_impl_blocks_on_the_same_type_are_tracked_independently() {
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        r#"
+pub struct Foo;
+
+/// First impl.
+impl Foo {
+    pub fn a(&self) -> u32 {
+        1
+    }
+}
+
+/// Second impl.
+impl Foo {
+    pub fn b(&self) -> u32 {
+        2
+    }
+}
+"#,
+    );
+    let outcome = engine::init(p.path(), false).unwrap();
+    assert_eq!(outcome.entries, 2);
+
+    p.write(
+        "src/lib.rs",
+        r#"
+pub struct Foo;
+
+/// First impl.
+impl Foo {
+    pub fn a(&self) -> u32 {
+        1
+    }
+}
+
+/// Second impl.
+impl Foo {
+    pub fn b(&self) -> u64 {
+        2
+    }
+}
+"#,
+    );
+    let check = engine::check(p.path()).unwrap();
+    assert_eq!(check.candidates.len(), 1);
+    assert!(check.candidates[0].comment_text.contains("Second impl"));
+}
+
+#[test]
+fn cfg_gated_twins_of_one_item_are_tracked_independently() {
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        r#"
+/// unix helper
+#[cfg(unix)]
+fn helper() -> u32 {
+    1
+}
+
+/// windows helper
+#[cfg(windows)]
+fn helper() -> u32 {
+    2
+}
+"#,
+    );
+    let outcome = engine::init(p.path(), false).unwrap();
+    assert_eq!(outcome.entries, 2);
+
+    p.write(
+        "src/lib.rs",
+        r#"
+/// unix helper
+#[cfg(unix)]
+fn helper() -> u32 {
+    1
+}
+
+/// windows helper
+#[cfg(windows)]
+fn helper() -> u32 {
+    3
+}
+"#,
+    );
+    let check = engine::check(p.path()).unwrap();
+    assert_eq!(check.candidates.len(), 1);
+    assert!(check.candidates[0].comment_text.contains("windows helper"));
+}
+
+#[test]
+fn repeated_macro_and_extern_definitions_each_get_an_entry() {
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        r#"
+/// first macro
+macro_rules! m {
+    () => { 1 };
+}
+
+/// second macro
+macro_rules! m {
+    () => { 2 };
+}
+
+/// first ffi
+extern "C" {
+    fn a();
+}
+
+/// second ffi
+extern "C" {
+    fn b();
+}
+"#,
+    );
+    let outcome = engine::init(p.path(), false).unwrap();
+    assert_eq!(outcome.entries, 4);
+}
+
+#[test]
+fn duplicate_items_with_identical_comments_still_get_distinct_ids() {
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        r#"
+pub struct Foo;
+
+/// Methods.
+impl Foo {
+    pub fn a(&self) {}
+}
+
+/// Methods.
+impl Foo {
+    pub fn b(&self) {}
+}
+
+/// Methods.
+impl Foo {
+    pub fn c(&self) {}
+}
+"#,
+    );
+    let outcome = engine::init(p.path(), false).unwrap();
+    assert_eq!(outcome.entries, 3);
+}
+
+#[test]
+fn adding_a_second_impl_block_leaves_the_first_untouched() {
+    let p = Project::new();
+    p.write(
+        "src/lib.rs",
+        r#"
+pub struct Foo;
+
+/// First impl.
+impl Foo {
+    pub fn a(&self) {}
+}
+"#,
+    );
+    engine::init(p.path(), false).unwrap();
+
+    p.write(
+        "src/lib.rs",
+        r#"
+pub struct Foo;
+
+/// First impl.
+impl Foo {
+    pub fn a(&self) {}
+}
+
+/// Second impl.
+impl Foo {
+    pub fn b(&self) {}
+}
+"#,
+    );
+    let check = engine::check(p.path()).unwrap();
+    assert_eq!(check.added, 1);
+    assert_eq!(check.unchanged, 1);
+    assert_eq!(check.pruned, 0);
+    assert!(check.candidates.is_empty());
+}
