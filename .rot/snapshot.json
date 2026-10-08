@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": 1789309246,
+  "generated_at": 1791487350,
   "entries": {
     "src/cli.rs|crate::Command::Check": {
       "kind": "Variant",
@@ -279,8 +279,8 @@
       "comment_kind": "OuterDoc",
       "comment_text": " Parses one Rust source file and extracts every doc-comment\n\n and regular-comment\n\n\n\n A doc comment (`///`, `//!`, `/** */`, `/*! */`)\n\n owns whatever item it immediately precedes (or, for `//!`, the\n\n enclosing container itself). a regular comment (`//`, `/* */`) never\n\n owns an item. Its scope is the code it actually comments on. The\n\n single preceding statement if it trails on the same line, or the code\n\n that follows\n",
       "comment_hash": "a8fab1c7c41112cafc1b6dee212b31873beacc7291f004c297158e9e8d663726",
-      "body_text": "pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {\n    let mut parser = Parser::new();\n\n    parser\n        .set_language(&tree_sitter_rust::LANGUAGE.into())\n        .context(\"loading rust grammar\")?;\n\n    let tree = parser\n        .parse(src, None)\n        .context(\"tree-sitter failed to produce a parse tree\")?;\n\n    let root = tree.root_node();\n    let mut out = Vec::new();\n    let mut dedup = HashMap::new();\n\n    let children = direct_children(root);\n\n    scan_container(\n        &children,\n        src,\n        file_rel,\n        \"crate\",\n        ItemKind::Module,\n        &mut dedup,\n        &mut out,\n    );\n    Ok(out)\n}",
-      "body_hash": "18c93fa35a77a63ba9d7149f3e75859e50a20674f1845f377d249b71a7025a00"
+      "body_text": "pub fn extract_file(file_rel: &str, src: &str) -> Result<Vec<ScopedItem>> {\n    let mut parser = Parser::new();\n\n    parser\n        .set_language(&tree_sitter_rust::LANGUAGE.into())\n        .context(\"loading rust grammar\")?;\n\n    let tree = parser\n        .parse(src, None)\n        .context(\"tree-sitter failed to produce a parse tree\")?;\n\n    let root = tree.root_node();\n    let mut out = Vec::new();\n    let mut dedup = HashMap::new();\n\n    let children = direct_children(root);\n\n    scan_container(\n        &children,\n        src,\n        file_rel,\n        \"crate\",\n        ItemKind::Module,\n        &mut dedup,\n        &mut out,\n    );\n\n    make_ids_unique(&mut out);\n\n    Ok(out)\n}",
+      "body_hash": "b0ea42db91b20af11f20d4c9e52f7afc149dd015cf700ecf1ef5153434bc37ab"
     },
     "src/scan/extract.rs|crate::find_nested_blocks": {
       "kind": "Function",
@@ -341,6 +341,16 @@
       "comment_hash": "65744a79ddf643a15a589f6178ad3962a3857d24d3408f6a42228aaba7b5aea0",
       "body_text": "fn handle_trailing_group(\n    group: &[Node],\n    preceding: &Node,\n    src: &str,\n    file: &str,\n    enclosing_path: &str,\n    dedup: &mut HashMap<String, usize>,\n    out: &mut Vec<ScopedItem>,\n) {\n    let text = group \n        .iter()\n        .map(|c| src[c.byte_range()].to_string())\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n\n    let body = strip_comments_node(*preceding, src);\n\n    if body.trim().is_empty() {\n        return;\n    }\n\n    let item_path = free_item_path(enclosing_path, \"trailing\", &text, dedup);\n    let last = group.last().unwrap();\n\n    let comment_kind = if last.kind() == \"block_comment\" {\n        CommentKind::Block\n    } else {\n        CommentKind::Line\n    };\n\n    let item = ScopedItem {\n        id: enjoin(file, &item_path),\n        kind: ItemKind::Free,\n        file: file.to_string(),\n        item_path,\n        comment_kind,\n        comment_text: text,\n        body_text: body,\n        line: line_of(&group[0]),\n    };\n\n    out.push(item);\n}",
       "body_hash": "0c272dbf9d25b4530253b9131ff8ceeb80e97e26801563468d58be0e15f54516"
+    },
+    "src/scan/extract.rs|crate::make_ids_unique": {
+      "kind": "Function",
+      "file": "src/scan/extract.rs",
+      "item_path": "crate::make_ids_unique",
+      "comment_kind": "OuterDoc",
+      "comment_text": " Force all ids to be unique\n",
+      "comment_hash": "95a81e590411f0e32b067c03e4810aaf8f4ebdc610d0455b5e6237d4088cd138",
+      "body_text": "fn make_ids_unique(items: &mut [ScopedItem]) {\n    let mut used: HashSet<String> = HashSet::new();\n\n    for item in items {\n        if used.insert(item.id.clone()) {\n            continue;\n        }\n\n        let anchor = short_anchor(&normalize_for_hash(&item.comment_text));\n        let base = format!(\"{}#{anchor}\", item.id);\n\n        let mut id = base.clone();\n        let mut n = 1;\n\n        while !used.insert(id.clone()) {\n            id = format!(\"{base}:{n}\");\n            n += 1;\n        }\n\n        item.id = id;\n    }\n}",
+      "body_hash": "9181a17de384f8342cd33153e39c6b2088bff6a45488e88e014cfc3dedbbe6f2"
     },
     "src/scan/extract.rs|crate::scan_container#free:30d7a332b93c": {
       "kind": "Free",
