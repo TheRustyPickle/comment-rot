@@ -1,6 +1,6 @@
 [package]
 name = "comment-rot"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Finds comments that have gone stale relative to the code they describe, via tree-sitter."
 readme = "README.md"
